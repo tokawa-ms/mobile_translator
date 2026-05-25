@@ -1,0 +1,30 @@
+name: mobile-translator
+metadata:
+  template: mobile-translator@0.1.0
+services:
+  api:
+    project: ./src/api
+    language: python
+    host: containerapp
+    docker:
+      path: Dockerfile
+      context: .
+  web:
+    project: ./src/web
+    language: ts
+    host: containerapp
+    docker:
+      path: Dockerfile
+      context: .
+hooks:
+  preprovision:
+    windows:
+      shell: pwsh
+      run: ./scripts/preprovision.ps1
+      continueOnError: false
+      interactive: true
+    posix:
+      shell: sh
+      run: ./scripts/preprovision.sh
+      continueOnError: false
+      interactive: true

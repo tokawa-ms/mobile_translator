@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": { "value": "${AZURE_ENV_NAME}" },
+    "location": { "value": "${AZURE_LOCATION}" },
+    "spaClientId": { "value": "${SPA_CLIENT_ID}" },
+    "apiAudience": { "value": "${API_AUDIENCE}" },
+    "apiScope": { "value": "${API_SCOPE=access_as_user}" },
+    "openAiLocation": { "value": "${AZURE_OPENAI_LOCATION=}" },
+    "deploymentMiniName": { "value": "${AZURE_OPENAI_DEPLOYMENT_MINI=gpt-5.4-mini}" },
+    "deploymentFullName": { "value": "${AZURE_OPENAI_DEPLOYMENT_FULL=gpt-5.5}" },
+    "speechLocation": { "value": "${AZURE_SPEECH_LOCATION=}" }
+  }
+}
