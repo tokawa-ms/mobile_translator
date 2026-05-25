@@ -1,0 +1,88 @@
+# ---------------------------------------------------------------------------
+# Secrets and local environment files
+# ---------------------------------------------------------------------------
+.env
+.env.*
+*.env
+*.env.*
+!.env.example
+!.env.sample
+!.env.*.example
+!*.env.example
+!*.env.sample
+!*/*.env.*.example
+!*.env.*.example
+
+# Azure Developer CLI local state can contain subscription, tenant, and env values.
+.azure/
+
+# Local Azure / cloud credential caches
+.azure-credentials/
+.aws/
+.gcloud/
+
+# Certificates and private keys
+*.key
+*.pem
+*.pfx
+*.p12
+*.crt
+*.cer
+*.csr
+*.jks
+
+# Local parameter overrides that may contain tenant, subscription, or secret values.
+*.parameters.local.json
+*.parameters.*.local.json
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# ---------------------------------------------------------------------------
+# Node / frontend
+# ---------------------------------------------------------------------------
+node_modules/
+dist/
+.vite/
+build/
+.npm/
+*.tsbuildinfo
+
+# ---------------------------------------------------------------------------
+# Logs and runtime artifacts
+# ---------------------------------------------------------------------------
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# ---------------------------------------------------------------------------
+# OS / editor
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---------------------------------------------------------------------------
+# Docker / container local overrides
+# ---------------------------------------------------------------------------
+docker-compose.override.yml
