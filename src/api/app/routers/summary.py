@@ -215,23 +215,49 @@ async def generate_question(
     )
     summary_text = summaries[0]["text"] if summaries else ""
 
-    q = await chat(
+    raw = await chat(
         settings,
         settings.azure_openai_deployment_mini,
         system=(
-            "あなたは聞き手として、議論を深める質問を 1 つ、丁寧な日本語で組み立てます。"
-            "前置きや解説は不要で、質問文だけを出力してください。"
+            "あなたは会議の聞き手として、議論を深める質問を 1 つ作成します。"
+            "出力は JSON オブジェクトのみとし、形式は "
+            '{"en": string, "ja": string}'
+            " にしてください。"
+            "en は自然な英語、ja は自然な日本語で、同じ意味内容の対訳にしてください。"
+            "前置き・解説・コードブロックは禁止です。"
         ),
         user=f"トピック: {topic['title']}\n背景: {topic.get('rationale','')}\n要約:\n{summary_text}",
-        max_tokens=200,
+        max_tokens=300,
     )
+
+    en_text = ""
+    ja_text = ""
+    try:
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start >= 0 and end > start:
+            payload = json.loads(raw[start : end + 1])
+            if isinstance(payload, dict):
+                en_text = str(payload.get("en", "")).strip()
+                ja_text = str(payload.get("ja", "")).strip()
+    except json.JSONDecodeError:
+        pass
+
+    # Fallback for non-JSON model output while keeping backward compatibility.
+    if not en_text and not ja_text:
+        ja_text = raw.strip()
+
+    text = f"EN: {en_text}\nJA: {ja_text}" if en_text or ja_text else raw.strip()
+
     doc = await create_doc(
         container,
         {
             "sessionId": session_id,
             "type": "question",
             "topicId": topic_id,
-            "text": q.strip(),
+            "text": text,
+            "en": en_text,
+            "ja": ja_text,
         },
     )
     return doc

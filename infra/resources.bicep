@@ -15,6 +15,8 @@ param apiScope string
 param openAiLocation string
 param deploymentMiniName string
 param deploymentFullName string
+param modelMiniName string
+param modelFullName string
 param speechLocation string
 
 var effectiveOpenAiLocation = empty(openAiLocation) ? location : openAiLocation
@@ -22,15 +24,15 @@ var effectiveSpeechLocation = empty(speechLocation) ? location : speechLocation
 
 // ---------- Networking ----------
 var vnetAddressPrefix = '10.50.0.0/16'
-var acaSubnetPrefix   = '10.50.0.0/23'
-var peSubnetPrefix    = '10.50.2.0/24'
+var acaSubnetPrefix = '10.50.0.0/23'
+var peSubnetPrefix = '10.50.2.0/24'
 
 resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
   name: 'vnet-${resourceToken}'
   location: location
   tags: tags
   properties: {
-    addressSpace: { addressPrefixes: [ vnetAddressPrefix ] }
+    addressSpace: { addressPrefixes: [vnetAddressPrefix] }
     subnets: [
       {
         name: 'aca'
@@ -75,21 +77,25 @@ var dnsZoneNames = [
   'privatelink.azurecr.io'
 ]
 
-resource dnsZones 'Microsoft.Network/privateDnsZones@2020-06-01' = [for z in dnsZoneNames: {
-  name: z
-  location: 'global'
-  tags: tags
-}]
-
-resource dnsZoneLinks 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = [for (z, i) in dnsZoneNames: {
-  name: '${z}/link-${resourceToken}'
-  location: 'global'
-  properties: {
-    registrationEnabled: false
-    virtualNetwork: { id: vnet.id }
+resource dnsZones 'Microsoft.Network/privateDnsZones@2020-06-01' = [
+  for z in dnsZoneNames: {
+    name: z
+    location: 'global'
+    tags: tags
   }
-  dependsOn: [ dnsZones[i] ]
-}]
+]
+
+resource dnsZoneLinks 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = [
+  for (z, i) in dnsZoneNames: {
+    name: '${z}/link-${resourceToken}'
+    location: 'global'
+    properties: {
+      registrationEnabled: false
+      virtualNetwork: { id: vnet.id }
+    }
+    dependsOn: [dnsZones[i]]
+  }
+]
 
 // ---------- Log Analytics + App Insights ----------
 resource law 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
@@ -133,7 +139,7 @@ resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2024-05-15' = {
   kind: 'GlobalDocumentDB'
   properties: {
     databaseAccountOfferType: 'Standard'
-    locations: [ { locationName: location, failoverPriority: 0 } ]
+    locations: [{ locationName: location, failoverPriority: 0 }]
     consistencyPolicy: { defaultConsistencyLevel: 'Session' }
     publicNetworkAccess: 'Disabled'
     capabilities: []
@@ -153,7 +159,7 @@ resource cosmosContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/con
   properties: {
     resource: {
       id: 'items'
-      partitionKey: { paths: [ '/sessionId' ], kind: 'Hash' }
+      partitionKey: { paths: ['/sessionId'], kind: 'Hash' }
       indexingPolicy: { indexingMode: 'consistent', automatic: true }
     }
     options: { throughput: 400 }
@@ -171,7 +177,7 @@ resource cosmosPe 'Microsoft.Network/privateEndpoints@2024-01-01' = {
         name: 'cosmos'
         properties: {
           privateLinkServiceId: cosmos.id
-          groupIds: [ 'Sql' ]
+          groupIds: ['Sql']
         }
       }
     ]
@@ -212,7 +218,7 @@ resource aoaiMini 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' 
   name: deploymentMiniName
   sku: { name: 'GlobalStandard', capacity: 50 }
   properties: {
-    model: { format: 'OpenAI', name: deploymentMiniName }
+    model: { format: 'OpenAI', name: modelMiniName }
   }
 }
 
@@ -221,9 +227,9 @@ resource aoaiFull 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' 
   name: deploymentFullName
   sku: { name: 'GlobalStandard', capacity: 30 }
   properties: {
-    model: { format: 'OpenAI', name: deploymentFullName }
+    model: { format: 'OpenAI', name: modelFullName }
   }
-  dependsOn: [ aoaiMini ]
+  dependsOn: [aoaiMini]
 }
 
 resource aoaiPe 'Microsoft.Network/privateEndpoints@2024-01-01' = {
@@ -237,11 +243,16 @@ resource aoaiPe 'Microsoft.Network/privateEndpoints@2024-01-01' = {
         name: 'aoai'
         properties: {
           privateLinkServiceId: aoai.id
-          groupIds: [ 'account' ]
+          groupIds: ['account']
         }
       }
     ]
   }
+  // Avoid race where account exists but backend provisioning is still Accepted.
+  dependsOn: [
+    aoaiMini
+    aoaiFull
+  ]
 }
 
 resource aoaiPeDns 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-01-01' = {
@@ -250,7 +261,7 @@ resource aoaiPeDns 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024
   properties: {
     privateDnsZoneConfigs: [
       { name: 'openai', properties: { privateDnsZoneId: dnsZones[1].id } }
-      { name: 'cog',    properties: { privateDnsZoneId: dnsZones[2].id } }
+      { name: 'cog', properties: { privateDnsZoneId: dnsZones[2].id } }
     ]
   }
 }
@@ -297,7 +308,7 @@ resource translatorPe 'Microsoft.Network/privateEndpoints@2024-01-01' = {
         name: 'translator'
         properties: {
           privateLinkServiceId: translator.id
-          groupIds: [ 'account' ]
+          groupIds: ['account']
         }
       }
     ]
@@ -326,7 +337,7 @@ resource acrPe 'Microsoft.Network/privateEndpoints@2024-01-01' = {
         name: 'acr'
         properties: {
           privateLinkServiceId: acr.id
-          groupIds: [ 'registry' ]
+          groupIds: ['registry']
         }
       }
     ]
@@ -376,9 +387,9 @@ resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
 
 // ---------- Role Assignments ----------
 // Role definition IDs
-var roleAcrPull                  = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
-var roleCogServicesUser          = 'a97b65f3-24c7-4388-baec-2e87135dc908'   // Cognitive Services User (for Translator/Speech via AAD)
-var roleAoaiUser                 = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'   // Cognitive Services OpenAI User
+var roleAcrPull = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
+var roleCogServicesUser = 'a97b65f3-24c7-4388-baec-2e87135dc908' // Cognitive Services User (for Translator/Speech via AAD)
+var roleAoaiUser = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd' // Cognitive Services OpenAI User
 
 resource raAcrUami 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: acr
@@ -433,7 +444,10 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'SPEECH_REGION', value: effectiveSpeechLocation }
             { name: 'SPEECH_ENDPOINT', value: 'https://${effectiveSpeechLocation}.api.cognitive.microsoft.com' }
             { name: 'SPEECH_RESOURCE_ID', value: speech.id }
-            { name: 'TRANSLATOR_ENDPOINT', value: 'https://${translator.name}.cognitiveservices.azure.com/translator/text/v3.0' }
+            {
+              name: 'TRANSLATOR_ENDPOINT'
+              value: 'https://${translator.name}.cognitiveservices.azure.com/translator/text/v3.0'
+            }
             { name: 'TRANSLATOR_REGION', value: location }
             { name: 'COSMOS_ENDPOINT', value: cosmos.properties.documentEndpoint }
             { name: 'COSMOS_DATABASE', value: 'mt' }
@@ -446,7 +460,7 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
       scale: { minReplicas: 1, maxReplicas: 3 }
     }
   }
-  dependsOn: [ raAcrUami, cosmosPeDns, aoaiPeDns, translatorPeDns ]
+  dependsOn: [raAcrUami, cosmosPeDns, aoaiPeDns, translatorPeDns]
 }
 
 resource webApp 'Microsoft.App/containerApps@2024-03-01' = {
@@ -493,7 +507,7 @@ resource webApp 'Microsoft.App/containerApps@2024-03-01' = {
       scale: { minReplicas: 1, maxReplicas: 3 }
     }
   }
-  dependsOn: [ raAcrUami ]
+  dependsOn: [raAcrUami]
 }
 
 // ---------- API MI role assignments ----------

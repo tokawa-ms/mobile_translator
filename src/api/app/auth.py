@@ -43,7 +43,7 @@ async def get_current_user(
     try:
         unverified_header = jwt.get_unverified_header(token)
     except JWTError as e:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, f"Invalid token header: {e}")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, f"Invalid token header: {e}") from e
 
     jwks = await _get_jwks(settings.tenant_id)
     key = next(
@@ -66,7 +66,24 @@ async def get_current_user(
             options={"verify_iss": False},
         )
     except JWTError as e:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, f"Invalid token: {e}")
+        # Entra access tokens can emit aud as either "api://<app-id>" or "<app-id>".
+        if settings.api_audience.startswith("api://"):
+            fallback_audience = settings.api_audience.removeprefix("api://")
+            try:
+                claims = jwt.decode(
+                    token,
+                    key,
+                    algorithms=[key.get("alg", "RS256")],
+                    audience=fallback_audience,
+                    options={"verify_iss": False},
+                )
+            except JWTError as fallback_error:
+                raise HTTPException(
+                    status.HTTP_401_UNAUTHORIZED,
+                    f"Invalid token: {fallback_error}",
+                ) from fallback_error
+        else:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, f"Invalid token: {e}") from e
 
     iss = claims.get("iss")
     if iss not in issuers:

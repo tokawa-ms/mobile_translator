@@ -8,3 +8,4 @@ openai==1.59.4
 httpx==0.28.1
 python-jose[cryptography]==3.3.0
 cachetools==5.5.0
+aiohttp==3.11.11

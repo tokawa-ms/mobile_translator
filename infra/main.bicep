@@ -28,7 +28,13 @@ param openAiLocation string = location
 param deploymentMiniName string = 'gpt-5.4-mini'
 
 @description('Azure OpenAI deployment name for the full model')
-param deploymentFullName string = 'gpt-5.5'
+param deploymentFullName string = 'gpt-5.4'
+
+@description('Azure OpenAI model name for the mini deployment')
+param modelMiniName string = 'gpt-4o-mini'
+
+@description('Azure OpenAI model name for the full deployment')
+param modelFullName string = 'gpt-4o'
 
 @description('Speech region (defaults to location)')
 param speechLocation string = location
@@ -57,6 +63,8 @@ module resources 'resources.bicep' = {
     openAiLocation: openAiLocation
     deploymentMiniName: deploymentMiniName
     deploymentFullName: deploymentFullName
+    modelMiniName: modelMiniName
+    modelFullName: modelFullName
     speechLocation: speechLocation
   }
 }

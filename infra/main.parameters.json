@@ -9,7 +9,9 @@
     "apiScope": { "value": "${API_SCOPE=access_as_user}" },
     "openAiLocation": { "value": "${AZURE_OPENAI_LOCATION=}" },
     "deploymentMiniName": { "value": "${AZURE_OPENAI_DEPLOYMENT_MINI=gpt-5.4-mini}" },
-    "deploymentFullName": { "value": "${AZURE_OPENAI_DEPLOYMENT_FULL=gpt-5.5}" },
+    "deploymentFullName": { "value": "${AZURE_OPENAI_DEPLOYMENT_FULL=gpt-5.4}" },
+    "modelMiniName": { "value": "${AZURE_OPENAI_MODEL_MINI=gpt-4o-mini}" },
+    "modelFullName": { "value": "${AZURE_OPENAI_MODEL_FULL=gpt-4o}" },
     "speechLocation": { "value": "${AZURE_SPEECH_LOCATION=}" }
   }
 }

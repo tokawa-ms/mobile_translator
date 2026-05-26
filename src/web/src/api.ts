@@ -28,7 +28,14 @@ export interface Summary {
   toSeq?: number;
 }
 export interface Topic { id: string; title: string; rationale: string; summaryId: string; type: "topic"; }
-export interface Question { id: string; text: string; topicId: string; type: "question"; }
+export interface Question {
+  id: string;
+  text: string;
+  topicId: string;
+  type: "question";
+  en?: string;
+  ja?: string;
+}
 
 export const api = {
   speechToken: () => request<SpeechToken>("/api/speech/token", { method: "POST" }),

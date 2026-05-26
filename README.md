@@ -8,17 +8,17 @@ English documentation is available in [README-en.md](README-en.md).
 
 ### ユーザー向け機能
 
-| 機能 | 仕様 |
-| --- | --- |
-| 音声収録 | スマホブラウザのマイクを使用。PWA として動作します。 |
-| 音声認識 | Azure Speech SDK をブラウザから直接利用し、連続認識します。入力言語はユーザーがセッション作成時に選択します。 |
-| 翻訳 | 認識済み発話を API に送信し、Azure AI Translator で日本語に翻訳します。 |
-| 直近要約 | 録音中に 3 セグメントごと、または手動操作で Azure OpenAI `gpt-5.4-mini` を使って直近文脈を要約します。 |
-| 長期要約 | 手動操作で Azure OpenAI `gpt-5.5` を使ってセッション全体を構造化要約します。 |
-| Q&A 候補 | 直近要約から Q&A 候補トピックを生成します。 |
-| 質問生成 | Q&A 候補トピックを選択すると、議論を深める質問文を生成します。 |
-| 永続化 | セッション、発話、翻訳、要約、トピック、質問を Cosmos DB に保存します。 |
-| ユーザー認証 | MSAL.js で自社 Microsoft Entra ID テナントにサインインします。 |
+| 機能         | 仕様                                                                                                          |
+| ------------ | ------------------------------------------------------------------------------------------------------------- |
+| 音声収録     | スマホブラウザのマイクを使用。PWA として動作します。                                                          |
+| 音声認識     | Azure Speech SDK をブラウザから直接利用し、連続認識します。入力言語はユーザーがセッション作成時に選択します。 |
+| 翻訳         | 認識済み発話を API に送信し、Azure AI Translator で日本語に翻訳します。                                       |
+| 直近要約     | 録音中に 3 セグメントごと、または手動操作で Azure OpenAI `gpt-5.4-mini` を使って直近文脈を要約します。        |
+| 長期要約     | 手動操作で Azure OpenAI `gpt-5.4` を使ってセッション全体を構造化要約します。                                  |
+| Q&A 候補     | 直近要約から Q&A 候補トピックを生成します。                                                                   |
+| 質問生成     | Q&A 候補トピックを選択すると、議論を深める質問文を生成します。                                                |
+| 永続化       | セッション、発話、翻訳、要約、トピック、質問を Cosmos DB に保存します。                                       |
+| ユーザー認証 | MSAL.js で自社 Microsoft Entra ID テナントにサインインします。                                                |
 
 ### アーキテクチャ
 
@@ -32,7 +32,7 @@ Azure Container Apps - Web (nginx + static PWA, external ingress)
   | /api/* same-origin proxy
   v
 Azure Container Apps - API (FastAPI, internal ingress, system-assigned managed identity)
-  |-- Azure OpenAI: gpt-5.4-mini / gpt-5.5 (Private Endpoint)
+  |-- Azure OpenAI: gpt-5.4-mini / gpt-5.4 (Private Endpoint)
   |-- Azure AI Translator (Private Endpoint)
   |-- Azure Cosmos DB for NoSQL (Private Endpoint)
   `-- Azure Speech token broker
@@ -46,26 +46,26 @@ Azure AI Speech
 
 ### Azure リソース
 
-| リソース | 用途 |
-| --- | --- |
-| Azure Container Apps | Web PWA と FastAPI API をホストします。 |
-| Azure Container Registry | azd がビルドしたコンテナイメージを保存します。 |
-| Azure Cosmos DB for NoSQL | セッション・発話・翻訳・要約・Q&A 情報を保存します。 |
-| Azure OpenAI | `gpt-5.4-mini` と `gpt-5.5` のデプロイを作成します。 |
-| Azure AI Speech | ブラウザ Speech SDK のリアルタイム音声認識に使用します。 |
-| Azure AI Translator | 発話テキストを日本語へ翻訳します。 |
+| リソース                                          | 用途                                                                        |
+| ------------------------------------------------- | --------------------------------------------------------------------------- |
+| Azure Container Apps                              | Web PWA と FastAPI API をホストします。                                     |
+| Azure Container Registry                          | azd がビルドしたコンテナイメージを保存します。                              |
+| Azure Cosmos DB for NoSQL                         | セッション・発話・翻訳・要約・Q&A 情報を保存します。                        |
+| Azure OpenAI                                      | `gpt-5.4-mini` と `gpt-5.4` のデプロイを作成します。                        |
+| Azure AI Speech                                   | ブラウザ Speech SDK のリアルタイム音声認識に使用します。                    |
+| Azure AI Translator                               | 発話テキストを日本語へ翻訳します。                                          |
 | Virtual Network / Private Endpoints / Private DNS | API から OpenAI、Translator、Cosmos、ACR へのプライベート接続を提供します。 |
-| Log Analytics / Application Insights | Container Apps のログとアプリケーション監視に使用します。 |
+| Log Analytics / Application Insights              | Container Apps のログとアプリケーション監視に使用します。                   |
 
 ### 認証とロール
 
-| 主体 | 対象 | 権限 |
-| --- | --- | --- |
-| エンドユーザー | API | MSAL access token。API は `tid`、`iss`、`aud`、`scp` を検証します。 |
-| API Container App の System-Assigned MI | Azure OpenAI | Cognitive Services OpenAI User |
-| API Container App の System-Assigned MI | Speech / Translator | Cognitive Services User |
-| API Container App の System-Assigned MI | Cosmos DB | Cosmos DB Built-in Data Contributor |
-| Container Apps pull 用 User-Assigned MI | ACR | AcrPull |
+| 主体                                    | 対象                | 権限                                                                |
+| --------------------------------------- | ------------------- | ------------------------------------------------------------------- |
+| エンドユーザー                          | API                 | MSAL access token。API は `tid`、`iss`、`aud`、`scp` を検証します。 |
+| API Container App の System-Assigned MI | Azure OpenAI        | Cognitive Services OpenAI User                                      |
+| API Container App の System-Assigned MI | Speech / Translator | Cognitive Services User                                             |
+| API Container App の System-Assigned MI | Cosmos DB           | Cosmos DB Built-in Data Contributor                                 |
+| Container Apps pull 用 User-Assigned MI | ACR                 | AcrPull                                                             |
 
 API キーは使用しません。Azure サービス間認証は Managed Identity で行います。
 
@@ -73,13 +73,13 @@ API キーは使用しません。Azure サービス間認証は Managed Identit
 
 ### 1. 必要なツールを用意する
 
-| ツール | 用途 |
-| --- | --- |
-| Azure Developer CLI (`azd`) | `azd up` によるプロビジョニングとデプロイ |
-| Azure CLI (`az`) | ログイン、Bicep build、App Registration 確認 |
-| Docker | API / Web コンテナイメージのビルド |
-| Node.js 20+ | Web PWA のローカル build |
-| Python 3.12+ | API のローカル確認 |
+| ツール                      | 用途                                         |
+| --------------------------- | -------------------------------------------- |
+| Azure Developer CLI (`azd`) | `azd up` によるプロビジョニングとデプロイ    |
+| Azure CLI (`az`)            | ログイン、Bicep build、App Registration 確認 |
+| Docker                      | API / Web コンテナイメージのビルド           |
+| Node.js 20+                 | Web PWA のローカル build                     |
+| Python 3.12+                | API のローカル確認                           |
 
 ### 2. Azure と Entra ID の権限を確認する
 
@@ -88,17 +88,17 @@ API キーは使用しません。Azure サービス間認証は Managed Identit
 - 対象サブスクリプションでリソースを作成できる権限。
 - Bicep がロール割り当てを作成できる権限。通常は `Owner`、または `Contributor` + `User Access Administrator` が必要です。
 - Microsoft Entra ID で App Registration を作成・更新できる権限。
-- Azure OpenAI の対象リージョンで `gpt-5.4-mini` と `gpt-5.5` をデプロイできる quota とモデル利用権限。
+- Azure OpenAI の対象リージョンで `gpt-5.4-mini` と `gpt-5.4` をデプロイできる quota とモデル利用権限。
 
 ### 3. リージョンとモデル availability を決める
 
 次を決めておきます。
 
-| 値 | 例 | 説明 |
-| --- | --- | --- |
-| `AZURE_LOCATION` | `japaneast` | Container Apps、Cosmos、Translator などの主要リージョン |
-| `AZURE_OPENAI_LOCATION` | `eastus2` | `gpt-5.4-mini` / `gpt-5.5` が利用できる Azure OpenAI リージョン |
-| `AZURE_SPEECH_LOCATION` | `japaneast` | Speech リソースのリージョン。省略時は `AZURE_LOCATION` |
+| 値                      | 例          | 説明                                                            |
+| ----------------------- | ----------- | --------------------------------------------------------------- |
+| `AZURE_LOCATION`        | `japaneast` | Container Apps、Cosmos、Translator などの主要リージョン         |
+| `AZURE_OPENAI_LOCATION` | `eastus2`   | `gpt-5.4-mini` / `gpt-5.4` が利用できる Azure OpenAI リージョン |
+| `AZURE_SPEECH_LOCATION` | `japaneast` | Speech リソースのリージョン。省略時は `AZURE_LOCATION`          |
 
 ### 4. Entra ID App Registration を作成する
 
@@ -112,11 +112,11 @@ API キーは使用しません。Azure サービス間認証は Managed Identit
 6. SPA に API scope (`api://<api-app-client-id>/access_as_user`) への permission を追加し、必要に応じて管理者同意を与えます。
 7. 次の値を控えます。
 
-| 値 | 使い道 |
-| --- | --- |
-| SPA Client ID | `SPA_CLIENT_ID` |
+| 値                     | 使い道                                          |
+| ---------------------- | ----------------------------------------------- |
+| SPA Client ID          | `SPA_CLIENT_ID`                                 |
 | API Application ID URI | `API_AUDIENCE`。例: `api://<api-app-client-id>` |
-| API scope short name | `API_SCOPE`。既定は `access_as_user` |
+| API scope short name   | `API_SCOPE`。既定は `access_as_user`            |
 
 初回デプロイ後に Web の URL が確定したら、SPA App Registration の redirect URI に `https://<web-fqdn>` を追加します。
 
@@ -145,8 +145,21 @@ azd env set API_SCOPE access_as_user
 
 ```powershell
 azd env set AZURE_OPENAI_DEPLOYMENT_MINI gpt-5.4-mini
-azd env set AZURE_OPENAI_DEPLOYMENT_FULL gpt-5.5
+azd env set AZURE_OPENAI_DEPLOYMENT_FULL gpt-5.4
 ```
+
+`.env` に値をまとめている場合は、`scripts/import-env-to-azd.ps1` で一括反映できます。
+
+```powershell
+# 例: mtrans-dev 環境へ .env の値を一括反映
+pwsh -File .\scripts\import-env-to-azd.ps1 -EnvFile .env -AzdEnvironment mtrans-dev
+
+# 反映せず確認だけしたい場合
+pwsh -File .\scripts\import-env-to-azd.ps1 -EnvFile .env -AzdEnvironment mtrans-dev -DryRun
+```
+
+このリポジトリでは `azd env set API_SCOPE` の値は短縮名 `access_as_user` を使用します。
+Web 実行時の完全な scope (`api://<api-app-client-id>/access_as_user`) はインフラ設定側で組み立てられます。
 
 ### 3. ローカルで構成を検証する
 
@@ -254,40 +267,40 @@ VITE_API_BASE_URL=http://localhost:8000
 
 `.gitignore` で、実値を含みうる以下のファイル・ディレクトリを除外しています。
 
-| 除外対象 | 理由 | 代替テンプレート |
-| --- | --- | --- |
-| `.azure/` | azd のサブスクリプション、テナント、環境値を含みます。 | `.env.example` |
-| `.env`, `.env.*`, `*.env`, `*.env.*` | ローカルの tenant、client ID、endpoint、secret を含みうるため。 | `.env.example`, `src/api/.env.example`, `src/web/.env.local.example` |
-| `*.key`, `*.pem`, `*.pfx`, `*.p12`, 証明書ファイル | 秘密鍵や証明書を含むため。 | なし。必要な場合は安全なシークレット管理に保存してください。 |
-| `node_modules/`, `dist/`, `.venv/`, `__pycache__/` | 生成物・ローカル依存関係のため。 | `package-lock.json`, `requirements.txt` |
-| `*.parameters.local.json` | 個人・環境固有の Azure パラメータを含みうるため。 | `infra/main.parameters.json` |
+| 除外対象                                           | 理由                                                            | 代替テンプレート                                                     |
+| -------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `.azure/`                                          | azd のサブスクリプション、テナント、環境値を含みます。          | `.env.example`                                                       |
+| `.env`, `.env.*`, `*.env`, `*.env.*`               | ローカルの tenant、client ID、endpoint、secret を含みうるため。 | `.env.example`, `src/api/.env.example`, `src/web/.env.local.example` |
+| `*.key`, `*.pem`, `*.pfx`, `*.p12`, 証明書ファイル | 秘密鍵や証明書を含むため。                                      | なし。必要な場合は安全なシークレット管理に保存してください。         |
+| `node_modules/`, `dist/`, `.venv/`, `__pycache__/` | 生成物・ローカル依存関係のため。                                | `package-lock.json`, `requirements.txt`                              |
+| `*.parameters.local.json`                          | 個人・環境固有の Azure パラメータを含みうるため。               | `infra/main.parameters.json`                                         |
 
 ## API リファレンス
 
-| メソッド | パス | 説明 |
-| --- | --- | --- |
-| GET | `/api/healthz` | API health check |
-| POST | `/api/speech/token` | Speech SDK 用の短命 Entra ID token を返します。 |
-| POST | `/api/sessions` | セッションを作成します。 |
-| GET | `/api/sessions` | 自分のセッション一覧を取得します。 |
-| GET | `/api/sessions/{id}` | セッションの全ドキュメントを取得します。 |
-| POST | `/api/sessions/{id}/segments` | 発話を翻訳して保存します。 |
-| POST | `/api/sessions/{id}/summary/recent` | `gpt-5.4-mini` で直近要約を生成します。 |
-| POST | `/api/sessions/{id}/summary/long` | `gpt-5.5` で長期要約を生成します。 |
-| POST | `/api/sessions/{id}/topics` | 直近要約から Q&A 候補トピックを生成します。 |
-| POST | `/api/sessions/{id}/topics/{topicId}/question` | 選択トピックから質問文を生成します。 |
+| メソッド | パス                                           | 説明                                            |
+| -------- | ---------------------------------------------- | ----------------------------------------------- |
+| GET      | `/api/healthz`                                 | API health check                                |
+| POST     | `/api/speech/token`                            | Speech SDK 用の短命 Entra ID token を返します。 |
+| POST     | `/api/sessions`                                | セッションを作成します。                        |
+| GET      | `/api/sessions`                                | 自分のセッション一覧を取得します。              |
+| GET      | `/api/sessions/{id}`                           | セッションの全ドキュメントを取得します。        |
+| POST     | `/api/sessions/{id}/segments`                  | 発話を翻訳して保存します。                      |
+| POST     | `/api/sessions/{id}/summary/recent`            | `gpt-5.4-mini` で直近要約を生成します。         |
+| POST     | `/api/sessions/{id}/summary/long`              | `gpt-5.4` で長期要約を生成します。              |
+| POST     | `/api/sessions/{id}/topics`                    | 直近要約から Q&A 候補トピックを生成します。     |
+| POST     | `/api/sessions/{id}/topics/{topicId}/question` | 選択トピックから質問文を生成します。            |
 
 ## データモデル
 
 Cosmos DB database は `mt`、container は `items`、partition key は `/sessionId` です。
 
-| `type` | 内容 |
-| --- | --- |
-| `session` | セッションのタイトル、入力言語、所有ユーザー OID |
-| `segment` | 発話単位の原文、日本語訳、連番 |
-| `summary` | `recent` または `long` の要約本文、対象 seq 範囲、利用モデル |
-| `topic` | Q&A 候補トピックと生成根拠 |
-| `question` | 選択トピックから生成された質問文 |
+| `type`     | 内容                                                         |
+| ---------- | ------------------------------------------------------------ |
+| `session`  | セッションのタイトル、入力言語、所有ユーザー OID             |
+| `segment`  | 発話単位の原文、日本語訳、連番                               |
+| `summary`  | `recent` または `long` の要約本文、対象 seq 範囲、利用モデル |
+| `topic`    | Q&A 候補トピックと生成根拠                                   |
+| `question` | 選択トピックから生成された質問文                             |
 
 ## 運用上の注意
 

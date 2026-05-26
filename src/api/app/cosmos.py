@@ -55,8 +55,6 @@ async def query(
     kwargs: dict[str, Any] = {"query": sql, "parameters": params or []}
     if partition_key is not None:
         kwargs["partition_key"] = partition_key
-    else:
-        kwargs["enable_cross_partition_query"] = True
     items: list[dict[str, Any]] = []
     async for item in container.query_items(**kwargs):
         items.append(item)
