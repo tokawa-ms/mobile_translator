@@ -100,73 +100,77 @@ export function SessionView() {
   }
 
   return (
-    <div className="page">
-      <div className="row">
-        {!recording
-          ? <button onClick={startRecording}>● 録音開始</button>
-          : <button onClick={stopRecording}>■ 停止</button>}
-        <button disabled={!!busy} onClick={() => run("recent", async () => { await api.summarizeRecent(id!); await refresh(); })}>
-          直近要約 (mini)
-        </button>
-        <button disabled={!!busy} onClick={() => run("long", async () => { await api.summarizeLong(id!); await refresh(); })}>
-          長期要約 (full)
-        </button>
-        <button disabled={!!busy} onClick={() => run("topics", async () => { await api.generateTopics(id!); await refresh(); })}>
-          Q&amp;A トピック生成
-        </button>
-      </div>
+    <div className="page session-page">
+      <div className="session-layout">
+        <section className="session-left-pane">
+          <h3>発話 / 訳（新しい順）</h3>
+          <ul className="segments">
+            {segments.map(s => (
+              <li key={s.id}>
+                <div className="src">[{s.seq}] {s.sourceText}</div>
+                <div className="ja">{s.ja}</div>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-      <section>
-        <h3>発話 / 訳（新しい順）</h3>
-        <ul className="segments">
-          {segments.map(s => (
-            <li key={s.id}>
-              <div className="src">[{s.seq}] {s.sourceText}</div>
-              <div className="ja">{s.ja}</div>
-            </li>
-          ))}
-        </ul>
-      </section>
+        <div className="session-right-pane">
+          <div className="row">
+            {!recording
+              ? <button onClick={startRecording}>● 録音開始</button>
+              : <button onClick={stopRecording}>■ 停止</button>}
+            <button disabled={!!busy} onClick={() => run("recent", async () => { await api.summarizeRecent(id!); await refresh(); })}>
+              直近要約 (mini)
+            </button>
+            <button disabled={!!busy} onClick={() => run("long", async () => { await api.summarizeLong(id!); await refresh(); })}>
+              長期要約 (full)
+            </button>
+            <button disabled={!!busy} onClick={() => run("topics", async () => { await api.generateTopics(id!); await refresh(); })}>
+              Q&amp;A トピック生成
+            </button>
+          </div>
 
-      <section>
-        <h3>要約</h3>
-        {summaries.map(s => (
-          <article key={s.id} className={`summary ${s.kind}`}>
-            <header>{s.kind === "recent" ? "直近" : "長期"} ・ {new Date(s.createdAt).toLocaleTimeString()}</header>
-            <pre>{s.text}</pre>
-          </article>
-        ))}
-      </section>
+          <section>
+            <h3>要約</h3>
+            {summaries.map(s => (
+              <article key={s.id} className={`summary ${s.kind}`}>
+                <header>{s.kind === "recent" ? "直近" : "長期"} ・ {new Date(s.createdAt).toLocaleTimeString()}</header>
+                <pre>{s.text}</pre>
+              </article>
+            ))}
+          </section>
 
-      <section>
-        <h3>Q&amp;A 候補</h3>
-        <ul className="topics">
-          {topics.map(t => (
-            <li key={t.id}>
-              <div className="topic-header">
-                <div className="title">{t.title}</div>
-                <button onClick={() => run("q", async () => {
-                  const q = await api.generateQuestion(id!, t.id);
-                  setQuestionsByTopicId(prev => ({ ...prev, [t.id]: q }));
-                })}>Q&amp;A生成</button>
-              </div>
-              <div className="rationale">{t.rationale}</div>
-              {questionsByTopicId[t.id] && (
-                <div className="question">
-                  {questionsByTopicId[t.id].en || questionsByTopicId[t.id].ja ? (
-                    <>
-                      {questionsByTopicId[t.id].en && <div><strong>EN:</strong> {questionsByTopicId[t.id].en}</div>}
-                      {questionsByTopicId[t.id].ja && <div><strong>JA:</strong> {questionsByTopicId[t.id].ja}</div>}
-                    </>
-                  ) : (
-                    <div><strong>質問:</strong> {questionsByTopicId[t.id].text}</div>
+          <section>
+            <h3>Q&amp;A 候補</h3>
+            <ul className="topics">
+              {topics.map(t => (
+                <li key={t.id}>
+                  <div className="topic-header">
+                    <div className="title">{t.title}</div>
+                    <button onClick={() => run("q", async () => {
+                      const q = await api.generateQuestion(id!, t.id);
+                      setQuestionsByTopicId(prev => ({ ...prev, [t.id]: q }));
+                    })}>Q&amp;A生成</button>
+                  </div>
+                  <div className="rationale">{t.rationale}</div>
+                  {questionsByTopicId[t.id] && (
+                    <div className="question">
+                      {questionsByTopicId[t.id].en || questionsByTopicId[t.id].ja ? (
+                        <>
+                          {questionsByTopicId[t.id].en && <div><strong>EN:</strong> {questionsByTopicId[t.id].en}</div>}
+                          {questionsByTopicId[t.id].ja && <div><strong>JA:</strong> {questionsByTopicId[t.id].ja}</div>}
+                        </>
+                      ) : (
+                        <div><strong>質問:</strong> {questionsByTopicId[t.id].text}</div>
+                      )}
+                    </div>
                   )}
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
