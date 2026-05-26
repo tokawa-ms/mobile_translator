@@ -128,6 +128,12 @@ export function SessionView() {
             <button disabled={!!busy} onClick={() => run("topics", async () => { await api.generateTopics(id!); await refresh(); })}>
               Q&amp;A トピック生成
             </button>
+            <button disabled={!!busy} onClick={() => run("export", async () => { await api.downloadSessionUtterances(id!); })}>
+              発話JSONダウンロード
+            </button>
+            <button disabled={!!busy} onClick={() => run("export-md", async () => { await api.downloadSessionItemsMarkdown(id!); })}>
+              全文書MDダウンロード
+            </button>
           </div>
 
           <section>

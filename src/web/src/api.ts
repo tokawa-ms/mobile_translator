@@ -62,4 +62,52 @@ export const api = {
     }),
   generateQuestion: (id: string, topicId: string) =>
     request<Question>(`/api/sessions/${id}/topics/${topicId}/question`, { method: "POST" }),
+  downloadSessionUtterances: async (id: string) => {
+    const token = await getApiToken();
+    const resp = await fetch(`${config.apiBaseUrl}/api/sessions/${id}/segments/export`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!resp.ok) throw new Error(`${resp.status} ${await resp.text()}`);
+
+    const blob = await resp.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const contentDisposition = resp.headers.get("Content-Disposition") || "";
+    const fileNameMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+    const fileName = fileNameMatch?.[1] || `session-${id}-utterances.json`;
+
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  },
+  downloadSessionItemsMarkdown: async (id: string) => {
+    const token = await getApiToken();
+    const resp = await fetch(`${config.apiBaseUrl}/api/sessions/${id}/items/export/markdown`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!resp.ok) throw new Error(`${resp.status} ${await resp.text()}`);
+
+    const blob = await resp.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const contentDisposition = resp.headers.get("Content-Disposition") || "";
+    const fileNameMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+    const fileName = fileNameMatch?.[1] || `session-${id}-all-items.md`;
+
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  },
 };
