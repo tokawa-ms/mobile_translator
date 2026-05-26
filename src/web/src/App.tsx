@@ -1,10 +1,11 @@
 import { AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from "@azure/msal-react";
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, useMatch } from "react-router-dom";
 import { apiScopes } from "./auth";
 
 export default function App() {
   const { instance, accounts } = useMsal();
   const account = accounts[0];
+  const isSessionDetail = useMatch("/sessions/:id") !== null;
 
   return (
     <div className="app">
@@ -20,7 +21,7 @@ export default function App() {
           </UnauthenticatedTemplate>
         </div>
       </header>
-      <main className="app-main">
+      <main className={`app-main ${isSessionDetail ? "app-main--wide" : ""}`}>
         <AuthenticatedTemplate>
           <Outlet />
         </AuthenticatedTemplate>

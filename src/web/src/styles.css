@@ -5,6 +5,7 @@ body { margin: 0; font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
 .app-header .brand { color: white; text-decoration: none; font-weight: 600; }
 .app-header .user { display: flex; align-items: center; gap: 8px; }
 .app-main { padding: 16px; max-width: 800px; margin: 0 auto; width: 100%; }
+.app-main--wide { max-width: 1200px; }
 .page h2 { margin-top: 24px; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 16px; }
 button { padding: 8px 14px; border: 0; border-radius: 8px; background: #1e3a8a; color: white; cursor: pointer; }
@@ -27,3 +28,32 @@ ul.topics .title { font-weight: 600; }
 ul.topics .rationale { color: #666; font-size: 0.9em; margin: 4px 0 8px; }
 ul.topics .question { margin-top: 8px; }
 .question { background: #fef3c7; padding: 12px; border-radius: 8px; margin-top: 12px; }
+
+.session-layout {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.session-left-pane,
+.session-right-pane {
+	min-width: 0;
+}
+
+@media (min-width: 1024px) {
+	.session-layout {
+		flex-direction: row;
+		align-items: flex-start;
+		gap: 24px;
+	}
+
+	.session-left-pane {
+		flex: 0 0 44%;
+		position: sticky;
+		top: 16px;
+	}
+
+	.session-right-pane {
+		flex: 1;
+	}
+}
