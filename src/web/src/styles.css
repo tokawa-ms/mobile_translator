@@ -22,6 +22,8 @@ ul.segments .ja { font-weight: 500; margin-top: 4px; }
 .summary pre { white-space: pre-wrap; font-family: inherit; margin: 0; }
 ul.topics { list-style: none; padding: 0; }
 ul.topics li { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; }
+ul.topics .topic-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 ul.topics .title { font-weight: 600; }
 ul.topics .rationale { color: #666; font-size: 0.9em; margin: 4px 0 8px; }
+ul.topics .question { margin-top: 8px; }
 .question { background: #fef3c7; padding: 12px; border-radius: 8px; margin-top: 12px; }

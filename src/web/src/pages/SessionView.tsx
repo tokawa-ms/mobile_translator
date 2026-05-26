@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   AudioConfig,
@@ -15,7 +15,7 @@ export function SessionView() {
   const [items, setItems] = useState<Item[]>([]);
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-  const [question, setQuestion] = useState<Question | null>(null);
+  const [questionsByTopicId, setQuestionsByTopicId] = useState<Record<string, Question>>({});
   const recognizerRef = useRef<SpeechRecognizer | null>(null);
   const sessionLang = useRef<string>("en-US");
   const summarizingRef = useRef(false);
@@ -33,9 +33,21 @@ export function SessionView() {
   }
   useEffect(() => { refresh().catch(console.error); }, [id]);
 
-  const segments = items.filter(i => i.type === "segment") as (Segment & Item)[];
+  const segments = useMemo(
+    () =>
+      (items.filter(i => i.type === "segment") as (Segment & Item)[])
+        .slice()
+        .sort((a, b) => b.seq - a.seq),
+    [items]
+  );
   const summaries = items.filter(i => i.type === "summary") as (Summary & Item)[];
-  const topics = items.filter(i => i.type === "topic") as (Topic & Item)[];
+  const topics = useMemo(
+    () =>
+      (items.filter(i => i.type === "topic") as (Topic & Item)[])
+        .slice()
+        .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()),
+    [items]
+  );
 
   async function maybeSummarizeRecent(latestSeq: number) {
     if (!id || summarizingRef.current) return;
@@ -105,7 +117,7 @@ export function SessionView() {
       </div>
 
       <section>
-        <h3>発話 / 訳</h3>
+        <h3>発話 / 訳（新しい順）</h3>
         <ul className="segments">
           {segments.map(s => (
             <li key={s.id}>
@@ -131,16 +143,29 @@ export function SessionView() {
         <ul className="topics">
           {topics.map(t => (
             <li key={t.id}>
-              <div className="title">{t.title}</div>
+              <div className="topic-header">
+                <div className="title">{t.title}</div>
+                <button onClick={() => run("q", async () => {
+                  const q = await api.generateQuestion(id!, t.id);
+                  setQuestionsByTopicId(prev => ({ ...prev, [t.id]: q }));
+                })}>Q&amp;A生成</button>
+              </div>
               <div className="rationale">{t.rationale}</div>
-              <button onClick={() => run("q", async () => {
-                const q = await api.generateQuestion(id!, t.id);
-                setQuestion(q);
-              })}>質問文を生成</button>
+              {questionsByTopicId[t.id] && (
+                <div className="question">
+                  {questionsByTopicId[t.id].en || questionsByTopicId[t.id].ja ? (
+                    <>
+                      {questionsByTopicId[t.id].en && <div><strong>EN:</strong> {questionsByTopicId[t.id].en}</div>}
+                      {questionsByTopicId[t.id].ja && <div><strong>JA:</strong> {questionsByTopicId[t.id].ja}</div>}
+                    </>
+                  ) : (
+                    <div><strong>質問:</strong> {questionsByTopicId[t.id].text}</div>
+                  )}
+                </div>
+              )}
             </li>
           ))}
         </ul>
-        {question && <div className="question"><strong>質問:</strong> {question.text}</div>}
       </section>
     </div>
   );

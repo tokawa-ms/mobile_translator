@@ -8,17 +8,17 @@ Japanese documentation is available in [README.md](README.md).
 
 ### User-facing features
 
-| Feature | Specification |
-| --- | --- |
-| Audio capture | Uses the smartphone browser microphone. The client runs as a PWA. |
-| Speech recognition | Uses Azure Speech SDK directly from the browser for continuous recognition. The source language is selected when creating a session. |
-| Translation | Sends finalized recognition results to the API and translates them into Japanese with Azure AI Translator. |
-| Recent summary | Uses Azure OpenAI `gpt-5.4-mini` to summarize recent context automatically every 3 segments during recording, or manually from the UI. |
-| Long-range summary | Uses Azure OpenAI `gpt-5.5` to create a structured summary of the whole session. |
-| Q&A topics | Generates candidate Q&A topics from the latest recent summary. |
-| Question generation | Generates a focused Japanese question from a selected topic. |
-| Persistence | Stores sessions, segments, translations, summaries, topics, and questions in Cosmos DB. |
-| User authentication | Uses MSAL.js to sign users into the organization Microsoft Entra ID tenant. |
+| Feature             | Specification                                                                                                                          |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Audio capture       | Uses the smartphone browser microphone. The client runs as a PWA.                                                                      |
+| Speech recognition  | Uses Azure Speech SDK directly from the browser for continuous recognition. The source language is selected when creating a session.   |
+| Translation         | Sends finalized recognition results to the API and translates them into Japanese with Azure AI Translator.                             |
+| Recent summary      | Uses Azure OpenAI `gpt-5.4-mini` to summarize recent context automatically every 3 segments during recording, or manually from the UI. |
+| Long-range summary  | Uses Azure OpenAI `gpt-5.4` to create a structured summary of the whole session.                                                       |
+| Q&A topics          | Generates candidate Q&A topics from the latest recent summary.                                                                         |
+| Question generation | Generates a focused Japanese question from a selected topic.                                                                           |
+| Persistence         | Stores sessions, segments, translations, summaries, topics, and questions in Cosmos DB.                                                |
+| User authentication | Uses MSAL.js to sign users into the organization Microsoft Entra ID tenant.                                                            |
 
 ### Architecture
 
@@ -32,7 +32,7 @@ Azure Container Apps - Web (nginx + static PWA, external ingress)
   | /api/* same-origin proxy
   v
 Azure Container Apps - API (FastAPI, internal ingress, system-assigned managed identity)
-  |-- Azure OpenAI: gpt-5.4-mini / gpt-5.5 (Private Endpoint)
+  |-- Azure OpenAI: gpt-5.4-mini / gpt-5.4 (Private Endpoint)
   |-- Azure AI Translator (Private Endpoint)
   |-- Azure Cosmos DB for NoSQL (Private Endpoint)
   `-- Azure Speech token broker
@@ -46,26 +46,26 @@ Azure AI Speech
 
 ### Azure resources
 
-| Resource | Purpose |
-| --- | --- |
-| Azure Container Apps | Hosts the Web PWA and FastAPI API. |
-| Azure Container Registry | Stores container images built by azd. |
-| Azure Cosmos DB for NoSQL | Stores sessions, segments, translations, summaries, and Q&A data. |
-| Azure OpenAI | Creates deployments for `gpt-5.4-mini` and `gpt-5.5`. |
-| Azure AI Speech | Provides real-time browser speech recognition through the Speech SDK. |
-| Azure AI Translator | Translates recognized text into Japanese. |
+| Resource                                          | Purpose                                                                               |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Azure Container Apps                              | Hosts the Web PWA and FastAPI API.                                                    |
+| Azure Container Registry                          | Stores container images built by azd.                                                 |
+| Azure Cosmos DB for NoSQL                         | Stores sessions, segments, translations, summaries, and Q&A data.                     |
+| Azure OpenAI                                      | Creates deployments for `gpt-5.4-mini` and `gpt-5.4`.                                 |
+| Azure AI Speech                                   | Provides real-time browser speech recognition through the Speech SDK.                 |
+| Azure AI Translator                               | Translates recognized text into Japanese.                                             |
 | Virtual Network / Private Endpoints / Private DNS | Provides private connectivity from the API to OpenAI, Translator, Cosmos DB, and ACR. |
-| Log Analytics / Application Insights | Provides logs and application monitoring for Container Apps. |
+| Log Analytics / Application Insights              | Provides logs and application monitoring for Container Apps.                          |
 
 ### Authentication and roles
 
-| Principal | Target | Permission |
-| --- | --- | --- |
-| End user | API | MSAL access token. The API validates `tid`, `iss`, `aud`, and `scp`. |
-| API Container App system-assigned MI | Azure OpenAI | Cognitive Services OpenAI User |
-| API Container App system-assigned MI | Speech / Translator | Cognitive Services User |
-| API Container App system-assigned MI | Cosmos DB | Cosmos DB Built-in Data Contributor |
-| Container Apps pull user-assigned MI | ACR | AcrPull |
+| Principal                            | Target              | Permission                                                           |
+| ------------------------------------ | ------------------- | -------------------------------------------------------------------- |
+| End user                             | API                 | MSAL access token. The API validates `tid`, `iss`, `aud`, and `scp`. |
+| API Container App system-assigned MI | Azure OpenAI        | Cognitive Services OpenAI User                                       |
+| API Container App system-assigned MI | Speech / Translator | Cognitive Services User                                              |
+| API Container App system-assigned MI | Cosmos DB           | Cosmos DB Built-in Data Contributor                                  |
+| Container Apps pull user-assigned MI | ACR                 | AcrPull                                                              |
 
 The application does not use API keys. Service-to-service authentication uses managed identity.
 
@@ -73,13 +73,13 @@ The application does not use API keys. Service-to-service authentication uses ma
 
 ### 1. Install required tools
 
-| Tool | Purpose |
-| --- | --- |
-| Azure Developer CLI (`azd`) | Provisioning and deployment with `azd up` |
-| Azure CLI (`az`) | Login, Bicep build, and App Registration checks |
-| Docker | Building API and Web container images |
-| Node.js 20+ | Local Web PWA builds |
-| Python 3.12+ | Local API checks |
+| Tool                        | Purpose                                         |
+| --------------------------- | ----------------------------------------------- |
+| Azure Developer CLI (`azd`) | Provisioning and deployment with `azd up`       |
+| Azure CLI (`az`)            | Login, Bicep build, and App Registration checks |
+| Docker                      | Building API and Web container images           |
+| Node.js 20+                 | Local Web PWA builds                            |
+| Python 3.12+                | Local API checks                                |
 
 ### 2. Confirm Azure and Entra ID permissions
 
@@ -88,17 +88,17 @@ The deployment operator needs at least the following permissions:
 - Permission to create resources in the target Azure subscription.
 - Permission to create role assignments from Bicep. Typically this means `Owner`, or `Contributor` plus `User Access Administrator`.
 - Permission to create and update Microsoft Entra ID App Registrations.
-- Quota and model access to deploy `gpt-5.4-mini` and `gpt-5.5` in the selected Azure OpenAI region.
+- Quota and model access to deploy `gpt-5.4-mini` and `gpt-5.4` in the selected Azure OpenAI region.
 
 ### 3. Choose regions and model availability
 
 Decide these values before deployment.
 
-| Value | Example | Description |
-| --- | --- | --- |
-| `AZURE_LOCATION` | `japaneast` | Primary region for Container Apps, Cosmos DB, Translator, and related resources |
-| `AZURE_OPENAI_LOCATION` | `eastus2` | Azure OpenAI region where `gpt-5.4-mini` and `gpt-5.5` are available |
-| `AZURE_SPEECH_LOCATION` | `japaneast` | Speech resource region. Defaults to `AZURE_LOCATION` if omitted |
+| Value                   | Example     | Description                                                                     |
+| ----------------------- | ----------- | ------------------------------------------------------------------------------- |
+| `AZURE_LOCATION`        | `japaneast` | Primary region for Container Apps, Cosmos DB, Translator, and related resources |
+| `AZURE_OPENAI_LOCATION` | `eastus2`   | Azure OpenAI region where `gpt-5.4-mini` and `gpt-5.4` are available            |
+| `AZURE_SPEECH_LOCATION` | `japaneast` | Speech resource region. Defaults to `AZURE_LOCATION` if omitted                 |
 
 ### 4. Create Entra ID App Registrations
 
@@ -112,11 +112,11 @@ This app uses separate App Registrations for the API and SPA.
 6. Add API permission from the SPA to the API scope (`api://<api-app-client-id>/access_as_user`) and grant admin consent if required.
 7. Keep these values:
 
-| Value | Used as |
-| --- | --- |
-| SPA Client ID | `SPA_CLIENT_ID` |
+| Value                  | Used as                                                 |
+| ---------------------- | ------------------------------------------------------- |
+| SPA Client ID          | `SPA_CLIENT_ID`                                         |
 | API Application ID URI | `API_AUDIENCE`, for example `api://<api-app-client-id>` |
-| API scope short name | `API_SCOPE`. Default: `access_as_user` |
+| API scope short name   | `API_SCOPE`. Default: `access_as_user`                  |
 
 After the first deployment, add the deployed Web URL (`https://<web-fqdn>`) to the SPA App Registration redirect URIs.
 
@@ -145,7 +145,7 @@ Only set these if you want to change the deployment names:
 
 ```powershell
 azd env set AZURE_OPENAI_DEPLOYMENT_MINI gpt-5.4-mini
-azd env set AZURE_OPENAI_DEPLOYMENT_FULL gpt-5.5
+azd env set AZURE_OPENAI_DEPLOYMENT_FULL gpt-5.4
 ```
 
 ### 3. Validate locally
@@ -254,40 +254,40 @@ VITE_API_BASE_URL=http://localhost:8000
 
 `.gitignore` excludes files and directories that may contain real environment values or local artifacts.
 
-| Excluded item | Reason | Template or source of truth |
-| --- | --- | --- |
-| `.azure/` | Contains azd subscription, tenant, and environment values. | `.env.example` |
-| `.env`, `.env.*`, `*.env`, `*.env.*` | May contain local tenant IDs, client IDs, endpoints, or secrets. | `.env.example`, `src/api/.env.example`, `src/web/.env.local.example` |
-| `*.key`, `*.pem`, `*.pfx`, `*.p12`, certificate files | May contain private keys or certificates. | None. Store them in a secure secret store if needed. |
-| `node_modules/`, `dist/`, `.venv/`, `__pycache__/` | Generated dependencies or local build artifacts. | `package-lock.json`, `requirements.txt` |
-| `*.parameters.local.json` | May contain personal or environment-specific Azure parameters. | `infra/main.parameters.json` |
+| Excluded item                                         | Reason                                                           | Template or source of truth                                          |
+| ----------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `.azure/`                                             | Contains azd subscription, tenant, and environment values.       | `.env.example`                                                       |
+| `.env`, `.env.*`, `*.env`, `*.env.*`                  | May contain local tenant IDs, client IDs, endpoints, or secrets. | `.env.example`, `src/api/.env.example`, `src/web/.env.local.example` |
+| `*.key`, `*.pem`, `*.pfx`, `*.p12`, certificate files | May contain private keys or certificates.                        | None. Store them in a secure secret store if needed.                 |
+| `node_modules/`, `dist/`, `.venv/`, `__pycache__/`    | Generated dependencies or local build artifacts.                 | `package-lock.json`, `requirements.txt`                              |
+| `*.parameters.local.json`                             | May contain personal or environment-specific Azure parameters.   | `infra/main.parameters.json`                                         |
 
 ## API reference
 
-| Method | Path | Description |
-| --- | --- | --- |
-| GET | `/api/healthz` | API health check |
-| POST | `/api/speech/token` | Returns a short-lived Entra ID token formatted for the Speech SDK. |
-| POST | `/api/sessions` | Creates a session. |
-| GET | `/api/sessions` | Lists sessions owned by the current user. |
-| GET | `/api/sessions/{id}` | Gets all documents for a session. |
-| POST | `/api/sessions/{id}/segments` | Translates and stores one recognized speech segment. |
-| POST | `/api/sessions/{id}/summary/recent` | Generates a recent summary with `gpt-5.4-mini`. |
-| POST | `/api/sessions/{id}/summary/long` | Generates a long-range summary with `gpt-5.5`. |
-| POST | `/api/sessions/{id}/topics` | Generates Q&A candidate topics from the latest recent summary. |
-| POST | `/api/sessions/{id}/topics/{topicId}/question` | Generates a question from the selected topic. |
+| Method | Path                                           | Description                                                        |
+| ------ | ---------------------------------------------- | ------------------------------------------------------------------ |
+| GET    | `/api/healthz`                                 | API health check                                                   |
+| POST   | `/api/speech/token`                            | Returns a short-lived Entra ID token formatted for the Speech SDK. |
+| POST   | `/api/sessions`                                | Creates a session.                                                 |
+| GET    | `/api/sessions`                                | Lists sessions owned by the current user.                          |
+| GET    | `/api/sessions/{id}`                           | Gets all documents for a session.                                  |
+| POST   | `/api/sessions/{id}/segments`                  | Translates and stores one recognized speech segment.               |
+| POST   | `/api/sessions/{id}/summary/recent`            | Generates a recent summary with `gpt-5.4-mini`.                    |
+| POST   | `/api/sessions/{id}/summary/long`              | Generates a long-range summary with `gpt-5.4`.                     |
+| POST   | `/api/sessions/{id}/topics`                    | Generates Q&A candidate topics from the latest recent summary.     |
+| POST   | `/api/sessions/{id}/topics/{topicId}/question` | Generates a question from the selected topic.                      |
 
 ## Data model
 
 Cosmos DB database: `mt`; container: `items`; partition key: `/sessionId`.
 
-| `type` | Content |
-| --- | --- |
-| `session` | Session title, source language, owner user OID |
-| `segment` | Source text, Japanese translation, and sequence number |
-| `summary` | `recent` or `long` summary text, sequence range, and model used |
-| `topic` | Q&A candidate topic and rationale |
-| `question` | Generated question text for a selected topic |
+| `type`     | Content                                                         |
+| ---------- | --------------------------------------------------------------- |
+| `session`  | Session title, source language, owner user OID                  |
+| `segment`  | Source text, Japanese translation, and sequence number          |
+| `summary`  | `recent` or `long` summary text, sequence range, and model used |
+| `topic`    | Q&A candidate topic and rationale                               |
+| `question` | Generated question text for a selected topic                    |
 
 ## Operational notes
 

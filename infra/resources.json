@@ -1,0 +1,895 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.43.8.12551",
+      "templateHash": "13492154105720102469"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Primary location"
+      }
+    },
+    "resourceToken": {
+      "type": "string",
+      "minLength": 5,
+      "metadata": {
+        "description": "Short hash token used to make resource names unique"
+      }
+    },
+    "tags": {
+      "type": "object"
+    },
+    "tenantId": {
+      "type": "string"
+    },
+    "spaClientId": {
+      "type": "string"
+    },
+    "apiAudience": {
+      "type": "string"
+    },
+    "apiScope": {
+      "type": "string"
+    },
+    "openAiLocation": {
+      "type": "string"
+    },
+    "deploymentMiniName": {
+      "type": "string"
+    },
+    "deploymentFullName": {
+      "type": "string"
+    },
+    "modelMiniName": {
+      "type": "string"
+    },
+    "modelFullName": {
+      "type": "string"
+    },
+    "speechLocation": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "effectiveOpenAiLocation": "[if(empty(parameters('openAiLocation')), parameters('location'), parameters('openAiLocation'))]",
+    "effectiveSpeechLocation": "[if(empty(parameters('speechLocation')), parameters('location'), parameters('speechLocation'))]",
+    "vnetAddressPrefix": "10.50.0.0/16",
+    "acaSubnetPrefix": "10.50.0.0/23",
+    "peSubnetPrefix": "10.50.2.0/24",
+    "dnsZoneNames": [
+      "privatelink.documents.azure.com",
+      "privatelink.openai.azure.com",
+      "privatelink.cognitiveservices.azure.com",
+      "privatelink.azurecr.io"
+    ],
+    "roleAcrPull": "7f951dda-4ed3-4680-a7ca-43fe172d538d",
+    "roleCogServicesUser": "a97b65f3-24c7-4388-baec-2e87135dc908",
+    "roleAoaiUser": "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd",
+    "cosmosBuiltInDataContributor": "00000000-0000-0000-0000-000000000002"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2024-01-01",
+      "name": "[format('vnet-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vnetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "aca",
+            "properties": {
+              "addressPrefix": "[variables('acaSubnetPrefix')]",
+              "delegations": [
+                {
+                  "name": "container-apps",
+                  "properties": {
+                    "serviceName": "Microsoft.App/environments"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "pe",
+            "properties": {
+              "addressPrefix": "[variables('peSubnetPrefix')]",
+              "privateEndpointNetworkPolicies": "Disabled"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "copy": {
+        "name": "dnsZones",
+        "count": "[length(variables('dnsZoneNames'))]"
+      },
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('dnsZoneNames')[copyIndex()]]",
+      "location": "global",
+      "tags": "[parameters('tags')]"
+    },
+    {
+      "copy": {
+        "name": "dnsZoneLinks",
+        "count": "[length(variables('dnsZoneNames'))]"
+      },
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2020-06-01",
+      "name": "[format('{0}/link-{1}', variables('dnsZoneNames')[copyIndex()], parameters('resourceToken'))]",
+      "location": "global",
+      "properties": {
+        "registrationEnabled": false,
+        "virtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-{0}', parameters('resourceToken')))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneNames')[copyIndex()])]",
+        "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2023-09-01",
+      "name": "[format('law-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[format('appi-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('law-{0}', parameters('resourceToken')))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('law-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-11-01-preview",
+      "name": "[format('acr{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "Premium"
+      },
+      "properties": {
+        "adminUserEnabled": false,
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2024-05-15",
+      "name": "[format('cosmos-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "GlobalDocumentDB",
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "locations": [
+          {
+            "locationName": "[parameters('location')]",
+            "failoverPriority": 0
+          }
+        ],
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session"
+        },
+        "publicNetworkAccess": "Disabled",
+        "capabilities": [],
+        "disableLocalAuth": true
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+      "apiVersion": "2024-05-15",
+      "name": "[format('{0}/{1}', format('cosmos-{0}', parameters('resourceToken')), 'mt')]",
+      "properties": {
+        "resource": {
+          "id": "mt"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('cosmos-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2024-05-15",
+      "name": "[format('{0}/{1}/{2}', format('cosmos-{0}', parameters('resourceToken')), 'mt', 'items')]",
+      "properties": {
+        "resource": {
+          "id": "items",
+          "partitionKey": {
+            "paths": [
+              "/sessionId"
+            ],
+            "kind": "Hash"
+          },
+          "indexingPolicy": {
+            "indexingMode": "consistent",
+            "automatic": true
+          }
+        },
+        "options": {
+          "throughput": 400
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', format('cosmos-{0}', parameters('resourceToken')), 'mt')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2024-01-01",
+      "name": "[format('pe-cosmos-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "subnet": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('vnet-{0}', parameters('resourceToken')), 'pe')]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "cosmos",
+            "properties": {
+              "privateLinkServiceId": "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('cosmos-{0}', parameters('resourceToken')))]",
+              "groupIds": [
+                "Sql"
+              ]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('cosmos-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+      "apiVersion": "2024-01-01",
+      "name": "[format('{0}/{1}', format('pe-cosmos-{0}', parameters('resourceToken')), 'default')]",
+      "properties": {
+        "privateDnsZoneConfigs": [
+          {
+            "name": "cosmos",
+            "properties": {
+              "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneNames')[0])]"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateEndpoints', format('pe-cosmos-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneNames')[0])]"
+      ]
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2024-10-01",
+      "name": "[format('aoai-{0}', parameters('resourceToken'))]",
+      "location": "[variables('effectiveOpenAiLocation')]",
+      "tags": "[parameters('tags')]",
+      "kind": "OpenAI",
+      "sku": {
+        "name": "S0"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "customSubDomainName": "[format('aoai-{0}', parameters('resourceToken'))]",
+        "publicNetworkAccess": "Disabled",
+        "disableLocalAuth": true,
+        "networkAcls": {
+          "defaultAction": "Deny",
+          "ipRules": [],
+          "virtualNetworkRules": []
+        }
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2024-10-01",
+      "name": "[format('{0}/{1}', format('aoai-{0}', parameters('resourceToken')), parameters('deploymentMiniName'))]",
+      "sku": {
+        "name": "GlobalStandard",
+        "capacity": 50
+      },
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "[parameters('modelMiniName')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('aoai-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2024-10-01",
+      "name": "[format('{0}/{1}', format('aoai-{0}', parameters('resourceToken')), parameters('deploymentFullName'))]",
+      "sku": {
+        "name": "GlobalStandard",
+        "capacity": 30
+      },
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "[parameters('modelFullName')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('aoai-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', format('aoai-{0}', parameters('resourceToken')), parameters('deploymentMiniName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2024-01-01",
+      "name": "[format('pe-aoai-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "subnet": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('vnet-{0}', parameters('resourceToken')), 'pe')]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "aoai",
+            "properties": {
+              "privateLinkServiceId": "[resourceId('Microsoft.CognitiveServices/accounts', format('aoai-{0}', parameters('resourceToken')))]",
+              "groupIds": [
+                "account"
+              ]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('aoai-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', format('aoai-{0}', parameters('resourceToken')), parameters('deploymentFullName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', format('aoai-{0}', parameters('resourceToken')), parameters('deploymentMiniName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+      "apiVersion": "2024-01-01",
+      "name": "[format('{0}/{1}', format('pe-aoai-{0}', parameters('resourceToken')), 'default')]",
+      "properties": {
+        "privateDnsZoneConfigs": [
+          {
+            "name": "openai",
+            "properties": {
+              "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneNames')[1])]"
+            }
+          },
+          {
+            "name": "cog",
+            "properties": {
+              "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneNames')[2])]"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateEndpoints', format('pe-aoai-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneNames')[1])]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneNames')[2])]"
+      ]
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2024-10-01",
+      "name": "[format('speech-{0}', parameters('resourceToken'))]",
+      "location": "[variables('effectiveSpeechLocation')]",
+      "tags": "[parameters('tags')]",
+      "kind": "SpeechServices",
+      "sku": {
+        "name": "S0"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "customSubDomainName": "[format('speech-{0}', parameters('resourceToken'))]",
+        "publicNetworkAccess": "Enabled",
+        "disableLocalAuth": true
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2024-10-01",
+      "name": "[format('translator-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "TextTranslation",
+      "sku": {
+        "name": "S1"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "customSubDomainName": "[format('translator-{0}', parameters('resourceToken'))]",
+        "publicNetworkAccess": "Disabled",
+        "disableLocalAuth": true
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2024-01-01",
+      "name": "[format('pe-translator-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "subnet": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('vnet-{0}', parameters('resourceToken')), 'pe')]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "translator",
+            "properties": {
+              "privateLinkServiceId": "[resourceId('Microsoft.CognitiveServices/accounts', format('translator-{0}', parameters('resourceToken')))]",
+              "groupIds": [
+                "account"
+              ]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('translator-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+      "apiVersion": "2024-01-01",
+      "name": "[format('{0}/{1}', format('pe-translator-{0}', parameters('resourceToken')), 'default')]",
+      "properties": {
+        "privateDnsZoneConfigs": [
+          {
+            "name": "cog",
+            "properties": {
+              "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneNames')[2])]"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneNames')[2])]",
+        "[resourceId('Microsoft.Network/privateEndpoints', format('pe-translator-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2024-01-01",
+      "name": "[format('pe-acr-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "subnet": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('vnet-{0}', parameters('resourceToken')), 'pe')]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "acr",
+            "properties": {
+              "privateLinkServiceId": "[resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken')))]",
+              "groupIds": [
+                "registry"
+              ]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+      "apiVersion": "2024-01-01",
+      "name": "[format('{0}/{1}', format('pe-acr-{0}', parameters('resourceToken')), 'default')]",
+      "properties": {
+        "privateDnsZoneConfigs": [
+          {
+            "name": "acr",
+            "properties": {
+              "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneNames')[3])]"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateEndpoints', format('pe-acr-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneNames')[3])]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/managedEnvironments",
+      "apiVersion": "2024-03-01",
+      "name": "[format('acaenv-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "appLogsConfiguration": {
+          "destination": "log-analytics",
+          "logAnalyticsConfiguration": {
+            "customerId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', format('law-{0}', parameters('resourceToken'))), '2023-09-01').customerId]",
+            "sharedKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', format('law-{0}', parameters('resourceToken'))), '2023-09-01').primarySharedKey]"
+          }
+        },
+        "workloadProfiles": [
+          {
+            "name": "Consumption",
+            "workloadProfileType": "Consumption"
+          }
+        ],
+        "vnetConfiguration": {
+          "internal": false,
+          "infrastructureSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('vnet-{0}', parameters('resourceToken')), 'aca')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('law-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-01-31",
+      "name": "[format('uami-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]"
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken')))]",
+      "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken'))), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uami-{0}', parameters('resourceToken'))), variables('roleAcrPull'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleAcrPull'))]",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uami-{0}', parameters('resourceToken'))), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uami-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2024-03-01",
+      "name": "[format('ca-api-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[union(parameters('tags'), createObject('azd-service-name', 'api'))]",
+      "identity": {
+        "type": "SystemAssigned, UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uami-{0}', parameters('resourceToken'))))]": {}
+        }
+      },
+      "properties": {
+        "environmentId": "[resourceId('Microsoft.App/managedEnvironments', format('acaenv-{0}', parameters('resourceToken')))]",
+        "configuration": {
+          "activeRevisionsMode": "Single",
+          "ingress": {
+            "external": false,
+            "targetPort": 8000,
+            "transport": "auto",
+            "allowInsecure": false
+          },
+          "registries": [
+            {
+              "server": "[reference(resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken'))), '2023-11-01-preview').loginServer]",
+              "identity": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uami-{0}', parameters('resourceToken')))]"
+            }
+          ],
+          "secrets": []
+        },
+        "template": {
+          "containers": [
+            {
+              "name": "api",
+              "image": "mcr.microsoft.com/k8se/quickstart:latest",
+              "resources": {
+                "cpu": "[json('0.5')]",
+                "memory": "1Gi"
+              },
+              "env": [
+                {
+                  "name": "TENANT_ID",
+                  "value": "[parameters('tenantId')]"
+                },
+                {
+                  "name": "API_AUDIENCE",
+                  "value": "[parameters('apiAudience')]"
+                },
+                {
+                  "name": "API_SCOPE",
+                  "value": "[parameters('apiScope')]"
+                },
+                {
+                  "name": "AZURE_OPENAI_ENDPOINT",
+                  "value": "[format('https://{0}.openai.azure.com/', format('aoai-{0}', parameters('resourceToken')))]"
+                },
+                {
+                  "name": "AZURE_OPENAI_DEPLOYMENT_MINI",
+                  "value": "[parameters('deploymentMiniName')]"
+                },
+                {
+                  "name": "AZURE_OPENAI_DEPLOYMENT_FULL",
+                  "value": "[parameters('deploymentFullName')]"
+                },
+                {
+                  "name": "SPEECH_REGION",
+                  "value": "[variables('effectiveSpeechLocation')]"
+                },
+                {
+                  "name": "SPEECH_ENDPOINT",
+                  "value": "[format('https://{0}.api.cognitive.microsoft.com', variables('effectiveSpeechLocation'))]"
+                },
+                {
+                  "name": "SPEECH_RESOURCE_ID",
+                  "value": "[resourceId('Microsoft.CognitiveServices/accounts', format('speech-{0}', parameters('resourceToken')))]"
+                },
+                {
+                  "name": "TRANSLATOR_ENDPOINT",
+                  "value": "[format('https://{0}.cognitiveservices.azure.com/translator/text/v3.0', format('translator-{0}', parameters('resourceToken')))]"
+                },
+                {
+                  "name": "TRANSLATOR_REGION",
+                  "value": "[parameters('location')]"
+                },
+                {
+                  "name": "COSMOS_ENDPOINT",
+                  "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', format('cosmos-{0}', parameters('resourceToken'))), '2024-05-15').documentEndpoint]"
+                },
+                {
+                  "name": "COSMOS_DATABASE",
+                  "value": "mt"
+                },
+                {
+                  "name": "COSMOS_CONTAINER",
+                  "value": "items"
+                },
+                {
+                  "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                  "value": "[reference(resourceId('Microsoft.Insights/components', format('appi-{0}', parameters('resourceToken'))), '2020-02-02').ConnectionString]"
+                },
+                {
+                  "name": "CORS_ALLOWED_ORIGINS",
+                  "value": "*"
+                }
+              ]
+            }
+          ],
+          "scale": {
+            "minReplicas": 1,
+            "maxReplicas": 3
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.App/managedEnvironments', format('acaenv-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('aoai-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Network/privateEndpoints/privateDnsZoneGroups', format('pe-aoai-{0}', parameters('resourceToken')), 'default')]",
+        "[resourceId('Microsoft.Insights/components', format('appi-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('cosmos-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Network/privateEndpoints/privateDnsZoneGroups', format('pe-cosmos-{0}', parameters('resourceToken')), 'default')]",
+        "[extensionResourceId(resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken'))), 'Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken'))), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uami-{0}', parameters('resourceToken'))), variables('roleAcrPull')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('speech-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('translator-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.Network/privateEndpoints/privateDnsZoneGroups', format('pe-translator-{0}', parameters('resourceToken')), 'default')]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uami-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2024-03-01",
+      "name": "[format('ca-web-{0}', parameters('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[union(parameters('tags'), createObject('azd-service-name', 'web'))]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uami-{0}', parameters('resourceToken'))))]": {}
+        }
+      },
+      "properties": {
+        "environmentId": "[resourceId('Microsoft.App/managedEnvironments', format('acaenv-{0}', parameters('resourceToken')))]",
+        "configuration": {
+          "activeRevisionsMode": "Single",
+          "ingress": {
+            "external": true,
+            "targetPort": 8080,
+            "transport": "auto",
+            "allowInsecure": false
+          },
+          "registries": [
+            {
+              "server": "[reference(resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken'))), '2023-11-01-preview').loginServer]",
+              "identity": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uami-{0}', parameters('resourceToken')))]"
+            }
+          ]
+        },
+        "template": {
+          "containers": [
+            {
+              "name": "web",
+              "image": "mcr.microsoft.com/k8se/quickstart:latest",
+              "resources": {
+                "cpu": "[json('0.25')]",
+                "memory": "0.5Gi"
+              },
+              "env": [
+                {
+                  "name": "TENANT_ID",
+                  "value": "[parameters('tenantId')]"
+                },
+                {
+                  "name": "CLIENT_ID",
+                  "value": "[parameters('spaClientId')]"
+                },
+                {
+                  "name": "API_SCOPE",
+                  "value": "[format('{0}/{1}', parameters('apiAudience'), parameters('apiScope'))]"
+                },
+                {
+                  "name": "API_BASE_URL",
+                  "value": ""
+                },
+                {
+                  "name": "API_UPSTREAM",
+                  "value": "[format('https://{0}', reference(resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken'))), '2024-03-01').configuration.ingress.fqdn)]"
+                },
+                {
+                  "name": "NGINX_ENVSUBST_FILTER",
+                  "value": "^API_UPSTREAM$"
+                }
+              ]
+            }
+          ],
+          "scale": {
+            "minReplicas": 1,
+            "maxReplicas": 3
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.App/managedEnvironments', format('acaenv-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken')))]",
+        "[extensionResourceId(resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken'))), 'Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken'))), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uami-{0}', parameters('resourceToken'))), variables('roleAcrPull')))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uami-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.CognitiveServices/accounts', format('aoai-{0}', parameters('resourceToken')))]",
+      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', format('aoai-{0}', parameters('resourceToken'))), resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken'))), variables('roleAoaiUser'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleAoaiUser'))]",
+        "principalId": "[reference(resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken'))), '2024-03-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('aoai-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.CognitiveServices/accounts', format('speech-{0}', parameters('resourceToken')))]",
+      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', format('speech-{0}', parameters('resourceToken'))), resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken'))), variables('roleCogServicesUser'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleCogServicesUser'))]",
+        "principalId": "[reference(resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken'))), '2024-03-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('speech-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.CognitiveServices/accounts', format('translator-{0}', parameters('resourceToken')))]",
+      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', format('translator-{0}', parameters('resourceToken'))), resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken'))), variables('roleCogServicesUser'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleCogServicesUser'))]",
+        "principalId": "[reference(resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken'))), '2024-03-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('translator-{0}', parameters('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+      "apiVersion": "2024-05-15",
+      "name": "[format('{0}/{1}', format('cosmos-{0}', parameters('resourceToken')), guid(resourceId('Microsoft.DocumentDB/databaseAccounts', format('cosmos-{0}', parameters('resourceToken'))), resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken'))), variables('cosmosBuiltInDataContributor')))]",
+      "properties": {
+        "roleDefinitionId": "[format('{0}/sqlRoleDefinitions/{1}', resourceId('Microsoft.DocumentDB/databaseAccounts', format('cosmos-{0}', parameters('resourceToken'))), variables('cosmosBuiltInDataContributor'))]",
+        "principalId": "[reference(resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken'))), '2024-03-01', 'full').identity.principalId]",
+        "scope": "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('cosmos-{0}', parameters('resourceToken')))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken')))]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('cosmos-{0}', parameters('resourceToken')))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "acrName": {
+      "type": "string",
+      "value": "[format('acr{0}', parameters('resourceToken'))]"
+    },
+    "acrLoginServer": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', format('acr{0}', parameters('resourceToken'))), '2023-11-01-preview').loginServer]"
+    },
+    "acaEnvName": {
+      "type": "string",
+      "value": "[format('acaenv-{0}', parameters('resourceToken'))]"
+    },
+    "acaEnvId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.App/managedEnvironments', format('acaenv-{0}', parameters('resourceToken')))]"
+    },
+    "apiAppName": {
+      "type": "string",
+      "value": "[format('ca-api-{0}', parameters('resourceToken'))]"
+    },
+    "apiAppUri": {
+      "type": "string",
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.App/containerApps', format('ca-api-{0}', parameters('resourceToken'))), '2024-03-01').configuration.ingress.fqdn)]"
+    },
+    "webAppName": {
+      "type": "string",
+      "value": "[format('ca-web-{0}', parameters('resourceToken'))]"
+    },
+    "webAppUri": {
+      "type": "string",
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.App/containerApps', format('ca-web-{0}', parameters('resourceToken'))), '2024-03-01').configuration.ingress.fqdn)]"
+    }
+  }
+}
