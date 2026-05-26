@@ -1,6 +1,6 @@
 import { AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from "@azure/msal-react";
 import { Outlet, Link, useMatch } from "react-router-dom";
-import { apiScopes } from "./auth";
+import { apiScopes, isMobile } from "./auth";
 
 export default function App() {
   const { instance, accounts } = useMsal();
@@ -14,10 +14,16 @@ export default function App() {
         <div className="user">
           <AuthenticatedTemplate>
             <span>{account?.name ?? account?.username}</span>
-            <button onClick={() => instance.logoutPopup()}>Sign out</button>
+            <button onClick={() =>
+              isMobile ? instance.logoutRedirect() : instance.logoutPopup()
+            }>Sign out</button>
           </AuthenticatedTemplate>
           <UnauthenticatedTemplate>
-            <button onClick={() => instance.loginPopup({ scopes: apiScopes })}>Sign in</button>
+            <button onClick={() =>
+              isMobile
+                ? instance.loginRedirect({ scopes: apiScopes })
+                : instance.loginPopup({ scopes: apiScopes })
+            }>Sign in</button>
           </UnauthenticatedTemplate>
         </div>
       </header>
