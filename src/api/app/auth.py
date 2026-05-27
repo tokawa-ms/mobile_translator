@@ -43,7 +43,7 @@ async def get_current_user(
     try:
         unverified_header = jwt.get_unverified_header(token)
     except JWTError as e:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, f"Invalid token header: {e}") from e
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token") from e
 
     jwks = await _get_jwks(settings.tenant_id)
     key = next(
@@ -51,7 +51,7 @@ async def get_current_user(
         None,
     )
     if key is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Signing key not found")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token")
 
     issuers = {
         f"https://login.microsoftonline.com/{settings.tenant_id}/v2.0",
@@ -80,17 +80,17 @@ async def get_current_user(
             except JWTError as fallback_error:
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED,
-                    f"Invalid token: {fallback_error}",
+                    "Invalid token",
                 ) from fallback_error
         else:
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, f"Invalid token: {e}") from e
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token") from e
 
     iss = claims.get("iss")
     if iss not in issuers:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, f"Invalid issuer: {iss}")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token")
 
     if claims.get("tid") != settings.tenant_id:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid tenant")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token")
 
     scopes = (claims.get("scp") or "").split()
     if settings.api_scope and settings.api_scope not in scopes:

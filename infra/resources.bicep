@@ -454,7 +454,10 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'COSMOS_DATABASE', value: 'mt' }
             { name: 'COSMOS_CONTAINER', value: 'items' }
             { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appi.properties.ConnectionString }
-            { name: 'CORS_ALLOWED_ORIGINS', value: '*' }
+            {
+              name: 'CORS_ALLOWED_ORIGINS'
+              value: 'http://localhost:5173'
+            }
           ]
         }
       ]
