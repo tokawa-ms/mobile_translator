@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     cosmos_container: str = "items"
 
     # CORS
-    cors_allowed_origins: str = "*"
+    cors_allowed_origins: str = "http://localhost:5173"
 
     # Misc
     target_language: str = "ja"
