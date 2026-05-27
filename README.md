@@ -50,14 +50,14 @@ flowchart LR
 
 ## 技術スタック
 
-| レイヤー | 採用技術 |
-| --- | --- |
-| Web | React 18, TypeScript, Vite, MSAL, Azure Speech SDK, PWA |
-| API | FastAPI, pydantic-settings, azure-identity, azure-cosmos, openai |
-| Infra | Azure Developer CLI (azd), Bicep, Azure Container Apps, ACR |
-| Data | Azure Cosmos DB for NoSQL |
-| AI | Azure AI Translator, Azure OpenAI |
-| Auth | Microsoft Entra ID (SPA + API App Registration) |
+| レイヤー | 採用技術                                                         |
+| -------- | ---------------------------------------------------------------- |
+| Web      | React 18, TypeScript, Vite, MSAL, Azure Speech SDK, PWA          |
+| API      | FastAPI, pydantic-settings, azure-identity, azure-cosmos, openai |
+| Infra    | Azure Developer CLI (azd), Bicep, Azure Container Apps, ACR      |
+| Data     | Azure Cosmos DB for NoSQL                                        |
+| AI       | Azure AI Translator, Azure OpenAI                                |
+| Auth     | Microsoft Entra ID (SPA + API App Registration)                  |
 
 ## リポジトリ構成
 
@@ -115,6 +115,7 @@ azd env set API_AUDIENCE api://<api-app-client-id>
 ```
 
 補足:
+
 - `scripts/preprovision.ps1` も `SPA_CLIENT_ID` と `API_AUDIENCE` の未設定チェックを行います
 - `.env` から一括投入する場合は `scripts/import-env-to-azd.ps1` が使えます
 
@@ -159,31 +160,31 @@ azd up
 
 ## API エンドポイント
 
-| Method | Path | 説明 |
-| --- | --- | --- |
-| GET | `/healthz` | ヘルスチェック |
-| GET | `/api/healthz` | API ヘルスチェック |
-| POST | `/api/speech/token` | Speech SDK 用トークン発行 |
-| POST | `/api/sessions` | セッション作成 |
-| GET | `/api/sessions` | セッション一覧 |
-| GET | `/api/sessions/{id}` | セッション内全アイテム取得 |
-| POST | `/api/sessions/{id}/segments` | セグメント翻訳・保存 |
-| POST | `/api/sessions/{id}/summary/recent` | 直近要約生成 |
-| POST | `/api/sessions/{id}/summary/long` | 長期要約生成 |
-| POST | `/api/sessions/{id}/topics` | トピック生成 |
-| POST | `/api/sessions/{id}/topics/{topicId}/question` | 質問生成 |
-| GET | `/api/sessions/{id}/segments/export` | 発話 JSON エクスポート |
-| GET | `/api/sessions/{id}/items/export/markdown` | 全アイテム Markdown エクスポート |
+| Method | Path                                           | 説明                             |
+| ------ | ---------------------------------------------- | -------------------------------- |
+| GET    | `/healthz`                                     | ヘルスチェック                   |
+| GET    | `/api/healthz`                                 | API ヘルスチェック               |
+| POST   | `/api/speech/token`                            | Speech SDK 用トークン発行        |
+| POST   | `/api/sessions`                                | セッション作成                   |
+| GET    | `/api/sessions`                                | セッション一覧                   |
+| GET    | `/api/sessions/{id}`                           | セッション内全アイテム取得       |
+| POST   | `/api/sessions/{id}/segments`                  | セグメント翻訳・保存             |
+| POST   | `/api/sessions/{id}/summary/recent`            | 直近要約生成                     |
+| POST   | `/api/sessions/{id}/summary/long`              | 長期要約生成                     |
+| POST   | `/api/sessions/{id}/topics`                    | トピック生成                     |
+| POST   | `/api/sessions/{id}/topics/{topicId}/question` | 質問生成                         |
+| GET    | `/api/sessions/{id}/segments/export`           | 発話 JSON エクスポート           |
+| GET    | `/api/sessions/{id}/items/export/markdown`     | 全アイテム Markdown エクスポート |
 
 ## データモデル
 
-| type | 説明 |
-| --- | --- |
-| `session` | タイトル、入力言語、所有ユーザー |
-| `segment` | 発話原文、和訳、連番 |
-| `summary` | `recent` / `long` 要約 |
-| `topic` | Q&A 候補トピック |
-| `question` | 生成質問（英語/日本語） |
+| type       | 説明                             |
+| ---------- | -------------------------------- |
+| `session`  | タイトル、入力言語、所有ユーザー |
+| `segment`  | 発話原文、和訳、連番             |
+| `summary`  | `recent` / `long` 要約           |
+| `topic`    | Q&A 候補トピック                 |
+| `question` | 生成質問（英語/日本語）          |
 
 ## セキュリティ・認証
 
