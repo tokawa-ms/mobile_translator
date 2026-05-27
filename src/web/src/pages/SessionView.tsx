@@ -17,9 +17,49 @@ export function SessionView() {
   const [busy, setBusy] = useState<string | null>(null);
   const [questionsByTopicId, setQuestionsByTopicId] = useState<Record<string, Question>>({});
   const recognizerRef = useRef<SpeechRecognizer | null>(null);
+  const wakeLockRef = useRef<any>(null);
   const sessionLang = useRef<string>("en-US");
   const summarizingRef = useRef(false);
   const lastRecentSummarySeqRef = useRef(0);
+
+  useEffect(() => {
+    let disposed = false;
+
+    async function requestWakeLock() {
+      if (disposed) return;
+      if (!("wakeLock" in navigator)) return;
+      if (document.visibilityState !== "visible") return;
+      if (wakeLockRef.current && !wakeLockRef.current.released) return;
+
+      try {
+        const wakeLock = await (navigator as any).wakeLock.request("screen");
+        wakeLockRef.current = wakeLock;
+        wakeLock.addEventListener?.("release", () => {
+          if (wakeLockRef.current === wakeLock) {
+            wakeLockRef.current = null;
+          }
+        });
+      } catch (err) {
+        console.warn("Wake Lock request failed", err);
+      }
+    }
+
+    function handleVisible() {
+      requestWakeLock().catch(() => {});
+    }
+
+    requestWakeLock().catch(() => {});
+    document.addEventListener("visibilitychange", handleVisible);
+    window.addEventListener("focus", handleVisible);
+
+    return () => {
+      disposed = true;
+      document.removeEventListener("visibilitychange", handleVisible);
+      window.removeEventListener("focus", handleVisible);
+      wakeLockRef.current?.release?.().catch(() => {});
+      wakeLockRef.current = null;
+    };
+  }, []);
 
   async function refresh() {
     if (!id) return;
@@ -40,7 +80,13 @@ export function SessionView() {
         .sort((a, b) => b.seq - a.seq),
     [items]
   );
-  const summaries = items.filter(i => i.type === "summary") as (Summary & Item)[];
+  const summaries = useMemo(
+    () =>
+      (items.filter(i => i.type === "summary") as (Summary & Item)[])
+        .slice()
+        .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()),
+    [items]
+  );
   const topics = useMemo(
     () =>
       (items.filter(i => i.type === "topic") as (Topic & Item)[])
@@ -115,7 +161,7 @@ export function SessionView() {
         </section>
 
         <div className="session-right-pane">
-          <div className="row">
+          <div className="row session-actions">
             {!recording
               ? <button onClick={startRecording}>● 録音開始</button>
               : <button onClick={stopRecording}>■ 停止</button>}
@@ -137,7 +183,7 @@ export function SessionView() {
           </div>
 
           <section>
-            <h3>要約</h3>
+            <h3>要約（新しい順）</h3>
             {summaries.map(s => (
               <article key={s.id} className={`summary ${s.kind}`}>
                 <header>{s.kind === "recent" ? "直近" : "長期"} ・ {new Date(s.createdAt).toLocaleTimeString()}</header>
