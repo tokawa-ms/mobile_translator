@@ -6,6 +6,7 @@ window.__APP_CONFIG__ = {
   tenantId: "${TENANT_ID:-}",
   clientId: "${CLIENT_ID:-}",
   apiScope: "${API_SCOPE:-}",
-  apiBaseUrl: "${API_BASE_URL:-}"
+  apiBaseUrl: "${API_BASE_URL:-}",
+  passkeyAuthContextId: "${PASSKEY_AUTH_CONTEXT_ID:-}"
 };
 EOF

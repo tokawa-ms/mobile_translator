@@ -11,6 +11,7 @@ param tenantId string
 param spaClientId string
 param apiAudience string
 param apiScope string
+param passkeyAuthContextId string
 
 param openAiLocation string
 param deploymentMiniName string
@@ -498,6 +499,7 @@ resource webApp 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'TENANT_ID', value: tenantId }
             { name: 'CLIENT_ID', value: spaClientId }
             { name: 'API_SCOPE', value: '${apiAudience}/${apiScope}' }
+            { name: 'PASSKEY_AUTH_CONTEXT_ID', value: passkeyAuthContextId }
             { name: 'API_BASE_URL', value: '' }
             { name: 'API_UPSTREAM', value: 'https://${apiApp.properties.configuration.ingress.fqdn}' }
             { name: 'NGINX_ENVSUBST_FILTER', value: '^API_UPSTREAM$' }

@@ -139,7 +139,10 @@ azd env set AZURE_SPEECH_LOCATION japaneast
 azd env set SPA_CLIENT_ID <spa-client-id>
 azd env set API_AUDIENCE api://<api-app-client-id>
 azd env set API_SCOPE access_as_user
+azd env set PASSKEY_AUTH_CONTEXT_ID <auth-context-id>
 ```
+
+`PASSKEY_AUTH_CONTEXT_ID` is optional. If your Entra tenant uses Authentication Context, set it to steer mobile sign-in toward passkey-capable policy paths.
 
 Only set these if you want to change the deployment names:
 
