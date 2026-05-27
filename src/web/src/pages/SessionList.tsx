@@ -5,6 +5,7 @@ import { api, type SessionInfo } from "../api";
 const LANGS = [
   { code: "en-US", label: "英語 (米国)" },
   { code: "en-GB", label: "英語 (英国)" },
+  { code: "ja-JP", label: "日本語" },
   { code: "zh-CN", label: "中国語 (簡体)" },
   { code: "ko-KR", label: "韓国語" },
   { code: "fr-FR", label: "フランス語" },
@@ -38,7 +39,11 @@ export function SessionList() {
       <h2>新しいセッション</h2>
       <div className="row">
         <input placeholder="タイトル" value={title} onChange={e => setTitle(e.target.value)} />
-        <select value={lang} onChange={e => setLang(e.target.value)}>
+        <select
+          aria-label="収録言語"
+          value={lang}
+          onChange={e => setLang(e.target.value)}
+        >
           {LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
         </select>
         <button onClick={create} disabled={loading}>作成</button>
