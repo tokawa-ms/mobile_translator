@@ -1,6 +1,6 @@
 import { AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from "@azure/msal-react";
 import { Outlet, Link, useMatch } from "react-router-dom";
-import { apiScopes, isMobile } from "./auth";
+import { buildInteractiveLoginRequest, isMobile } from "./auth";
 
 export default function App() {
   const { instance, accounts } = useMsal();
@@ -21,8 +21,8 @@ export default function App() {
           <UnauthenticatedTemplate>
             <button onClick={() =>
               isMobile
-                ? instance.loginRedirect({ scopes: apiScopes })
-                : instance.loginPopup({ scopes: apiScopes })
+                ? instance.loginRedirect(buildInteractiveLoginRequest())
+                : instance.loginPopup(buildInteractiveLoginRequest())
             }>Sign in</button>
           </UnauthenticatedTemplate>
         </div>

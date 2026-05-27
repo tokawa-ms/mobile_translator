@@ -7,6 +7,7 @@
     "spaClientId": { "value": "${SPA_CLIENT_ID}" },
     "apiAudience": { "value": "${API_AUDIENCE}" },
     "apiScope": { "value": "${API_SCOPE=access_as_user}" },
+    "passkeyAuthContextId": { "value": "${PASSKEY_AUTH_CONTEXT_ID=}" },
     "openAiLocation": { "value": "${AZURE_OPENAI_LOCATION=}" },
     "deploymentMiniName": { "value": "${AZURE_OPENAI_DEPLOYMENT_MINI=gpt-5.4-mini}" },
     "deploymentFullName": { "value": "${AZURE_OPENAI_DEPLOYMENT_FULL=gpt-5.4}" },

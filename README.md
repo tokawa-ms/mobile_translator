@@ -139,7 +139,10 @@ azd env set AZURE_SPEECH_LOCATION japaneast
 azd env set SPA_CLIENT_ID <spa-client-id>
 azd env set API_AUDIENCE api://<api-app-client-id>
 azd env set API_SCOPE access_as_user
+azd env set PASSKEY_AUTH_CONTEXT_ID <auth-context-id>
 ```
+
+`PASSKEY_AUTH_CONTEXT_ID` は任意です。Entra 側で Authentication Context を設定している場合に指定すると、モバイルのサインインでパスキー系ポリシーに誘導できます。
 
 モデルデプロイ名を変える場合のみ、次も設定します。
 
@@ -157,6 +160,8 @@ pwsh -File .\scripts\import-env-to-azd.ps1 -EnvFile .env -AzdEnvironment mtrans-
 # 反映せず確認だけしたい場合
 pwsh -File .\scripts\import-env-to-azd.ps1 -EnvFile .env -AzdEnvironment mtrans-dev -DryRun
 ```
+
+`.env` を使う場合は `PASSKEY_AUTH_CONTEXT_ID=<auth-context-id>` を追加できます（未設定なら空で問題ありません）。
 
 このリポジトリでは `azd env set API_SCOPE` の値は短縮名 `access_as_user` を使用します。
 Web 実行時の完全な scope (`api://<api-app-client-id>/access_as_user`) はインフラ設定側で組み立てられます。

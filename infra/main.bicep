@@ -21,6 +21,9 @@ param apiAudience string
 @description('API scope short name')
 param apiScope string = 'access_as_user'
 
+@description('Optional Entra Authentication Context ID used to steer mobile sign-in toward passkey-friendly policy')
+param passkeyAuthContextId string = ''
+
 @description('Azure OpenAI region (overrides location for OpenAI)')
 param openAiLocation string = location
 
@@ -60,6 +63,7 @@ module resources 'resources.bicep' = {
     spaClientId: spaClientId
     apiAudience: apiAudience
     apiScope: apiScope
+    passkeyAuthContextId: passkeyAuthContextId
     openAiLocation: openAiLocation
     deploymentMiniName: deploymentMiniName
     deploymentFullName: deploymentFullName
