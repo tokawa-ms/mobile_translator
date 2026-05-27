@@ -50,14 +50,14 @@ flowchart LR
 
 ## Tech Stack
 
-| Layer | Technology |
-| --- | --- |
-| Web | React 18, TypeScript, Vite, MSAL, Azure Speech SDK, PWA |
-| API | FastAPI, pydantic-settings, azure-identity, azure-cosmos, openai |
-| Infra | Azure Developer CLI (azd), Bicep, Azure Container Apps, ACR |
-| Data | Azure Cosmos DB for NoSQL |
-| AI | Azure AI Translator, Azure OpenAI |
-| Auth | Microsoft Entra ID (SPA + API App Registration) |
+| Layer | Technology                                                       |
+| ----- | ---------------------------------------------------------------- |
+| Web   | React 18, TypeScript, Vite, MSAL, Azure Speech SDK, PWA          |
+| API   | FastAPI, pydantic-settings, azure-identity, azure-cosmos, openai |
+| Infra | Azure Developer CLI (azd), Bicep, Azure Container Apps, ACR      |
+| Data  | Azure Cosmos DB for NoSQL                                        |
+| AI    | Azure AI Translator, Azure OpenAI                                |
+| Auth  | Microsoft Entra ID (SPA + API App Registration)                  |
 
 ## Repository Layout
 
@@ -115,6 +115,7 @@ azd env set API_AUDIENCE api://<api-app-client-id>
 ```
 
 Notes:
+
 - `scripts/preprovision.ps1` checks that `SPA_CLIENT_ID` and `API_AUDIENCE` are set
 - You can bulk import from `.env` using `scripts/import-env-to-azd.ps1`
 
@@ -159,31 +160,31 @@ After first deployment, add `SERVICE_WEB_URI` to SPA App Registration Redirect U
 
 ## API Endpoints
 
-| Method | Path | Description |
-| --- | --- | --- |
-| GET | `/healthz` | Health check |
-| GET | `/api/healthz` | API health check |
-| POST | `/api/speech/token` | Issue Speech SDK token |
-| POST | `/api/sessions` | Create session |
-| GET | `/api/sessions` | List sessions |
-| GET | `/api/sessions/{id}` | Get all items in session |
-| POST | `/api/sessions/{id}/segments` | Translate and store segment |
-| POST | `/api/sessions/{id}/summary/recent` | Generate recent summary |
-| POST | `/api/sessions/{id}/summary/long` | Generate long summary |
-| POST | `/api/sessions/{id}/topics` | Generate topics |
-| POST | `/api/sessions/{id}/topics/{topicId}/question` | Generate question |
-| GET | `/api/sessions/{id}/segments/export` | Export utterances as JSON |
-| GET | `/api/sessions/{id}/items/export/markdown` | Export all items as Markdown |
+| Method | Path                                           | Description                  |
+| ------ | ---------------------------------------------- | ---------------------------- |
+| GET    | `/healthz`                                     | Health check                 |
+| GET    | `/api/healthz`                                 | API health check             |
+| POST   | `/api/speech/token`                            | Issue Speech SDK token       |
+| POST   | `/api/sessions`                                | Create session               |
+| GET    | `/api/sessions`                                | List sessions                |
+| GET    | `/api/sessions/{id}`                           | Get all items in session     |
+| POST   | `/api/sessions/{id}/segments`                  | Translate and store segment  |
+| POST   | `/api/sessions/{id}/summary/recent`            | Generate recent summary      |
+| POST   | `/api/sessions/{id}/summary/long`              | Generate long summary        |
+| POST   | `/api/sessions/{id}/topics`                    | Generate topics              |
+| POST   | `/api/sessions/{id}/topics/{topicId}/question` | Generate question            |
+| GET    | `/api/sessions/{id}/segments/export`           | Export utterances as JSON    |
+| GET    | `/api/sessions/{id}/items/export/markdown`     | Export all items as Markdown |
 
 ## Data Model
 
-| type | Description |
-| --- | --- |
-| `session` | Title, source language, owner user |
-| `segment` | Source utterance, Japanese translation, sequence |
-| `summary` | `recent` / `long` summary |
-| `topic` | Candidate Q&A topic |
-| `question` | Generated question (EN/JA) |
+| type       | Description                                      |
+| ---------- | ------------------------------------------------ |
+| `session`  | Title, source language, owner user               |
+| `segment`  | Source utterance, Japanese translation, sequence |
+| `summary`  | `recent` / `long` summary                        |
+| `topic`    | Candidate Q&A topic                              |
+| `question` | Generated question (EN/JA)                       |
 
 ## Security and Auth
 
