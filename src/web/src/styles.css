@@ -40,6 +40,17 @@ ul.topics .question { margin-top: 8px; }
 	min-width: 0;
 }
 
+@media (max-width: 1023px) {
+	.session-right-pane .session-actions {
+		position: sticky;
+		top: 0;
+		z-index: 20;
+		background: #f5f5f7;
+		padding: 8px 0 12px;
+		margin-top: 0;
+	}
+}
+
 @media (min-width: 1024px) {
 	.session-layout {
 		flex-direction: row;
