@@ -33,7 +33,7 @@ flowchart LR
 ## Key Features
 
 - Session lifecycle
-  - Create sessions with title and source language
+  - Create sessions with title and source language, plus optional speaker name and session number
   - Manage segments, summaries, topics, and questions per session
 - Live speech and translation
   - Save each recognition result as a segment
@@ -116,6 +116,7 @@ azd env set API_AUDIENCE api://<api-app-client-id>
 
 Notes:
 
+- During `azd up` / `azd provision`, `azure.yaml` automatically selects `scripts/preprovision.ps1` on Windows and `scripts/preprovision.sh` on POSIX environments
 - `scripts/preprovision.ps1` checks that `SPA_CLIENT_ID` and `API_AUDIENCE` are set
 - You can bulk import from `.env` using `scripts/import-env-to-azd.ps1`
 
@@ -138,15 +139,15 @@ After first deployment, add `SERVICE_WEB_URI` to SPA App Registration Redirect U
 - `API_AUDIENCE`
 - `API_SCOPE` (default: `access_as_user`)
 - `PASSKEY_AUTH_CONTEXT_ID` (optional)
-- `AZURE_OPENAI_DEPLOYMENT_MINI` / `AZURE_OPENAI_DEPLOYMENT_FULL`
-- `AZURE_OPENAI_MODEL_MINI` / `AZURE_OPENAI_MODEL_FULL`
+- `AZURE_OPENAI_DEPLOYMENT_MINI` / `AZURE_OPENAI_DEPLOYMENT_FULL` (must match the deployment names that exist in your Azure OpenAI resource)
+- `AZURE_OPENAI_MODEL_MINI` / `AZURE_OPENAI_MODEL_FULL` (model names used by Bicep when creating Azure OpenAI deployments; not used by the API runtime)
 
 ### API `.env` (local)
 
 - `TENANT_ID`, `API_AUDIENCE`, `API_SCOPE`
 - `AZURE_OPENAI_ENDPOINT`
-- `SPEECH_REGION`, `SPEECH_ENDPOINT`, `SPEECH_RESOURCE_ID`
-- `TRANSLATOR_ENDPOINT`, `TRANSLATOR_REGION`
+- `SPEECH_REGION`, `SPEECH_ENDPOINT`, `SPEECH_RESOURCE_ID` (required to issue Speech SDK tokens locally; populated automatically in Azure deployment)
+- `TRANSLATOR_ENDPOINT`, `TRANSLATOR_REGION` (`TRANSLATOR_REGION` is set to the same value as `AZURE_LOCATION` in Azure deployments)
 - `COSMOS_ENDPOINT`, `COSMOS_DATABASE`, `COSMOS_CONTAINER`
 - `CORS_ALLOWED_ORIGINS`
 
@@ -173,14 +174,14 @@ After first deployment, add `SERVICE_WEB_URI` to SPA App Registration Redirect U
 | POST   | `/api/sessions/{id}/summary/long`              | Generate long summary        |
 | POST   | `/api/sessions/{id}/topics`                    | Generate topics              |
 | POST   | `/api/sessions/{id}/topics/{topicId}/question` | Generate question            |
-| GET    | `/api/sessions/{id}/segments/export`           | Export utterances as JSON    |
-| GET    | `/api/sessions/{id}/items/export/markdown`     | Export all items as Markdown |
+| GET    | `/api/sessions/{id}/segments/export`           | Download utterances JSON with session metadata |
+| GET    | `/api/sessions/{id}/items/export/markdown`     | Download full session items as a Markdown file |
 
 ## Data Model
 
 | type       | Description                                      |
 | ---------- | ------------------------------------------------ |
-| `session`  | Title, source language, owner user               |
+| `session`  | Title, source language, optional speaker name / session number, owner user |
 | `segment`  | Source utterance, Japanese translation, sequence |
 | `summary`  | `recent` / `long` summary                        |
 | `topic`    | Candidate Q&A topic                              |
