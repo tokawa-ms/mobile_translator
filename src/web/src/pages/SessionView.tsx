@@ -55,6 +55,19 @@ const useStyles = makeStyles({
     flexDirection: "column",
     gap: tokens.spacingVerticalL,
   },
+  mobileTop: {
+    display: "none",
+    "@media screen and (max-width: 1023px)": {
+      display: "flex",
+      flexDirection: "column",
+      gap: tokens.spacingVerticalM,
+    },
+  },
+  desktopOnly: {
+    "@media screen and (max-width: 1023px)": {
+      display: "none",
+    },
+  },
   actions: {
     display: "flex",
     flexWrap: "wrap",
@@ -100,6 +113,11 @@ const useStyles = makeStyles({
     margin: 0,
     whiteSpace: "pre-wrap",
     fontFamily: "inherit",
+  },
+  hideOnMobile: {
+    "@media screen and (max-width: 1023px)": {
+      display: "none",
+    },
   },
   topicCard: {
     padding: tokens.spacingHorizontalM,
@@ -265,8 +283,46 @@ export function SessionView() {
     finally { setBusy(null); }
   }
 
+  const latestSummary = summaries[0];
+
+  const actionButtons = (
+    <>
+      {!recording
+        ? <Button appearance="primary" onClick={startRecording}>● 録音開始</Button>
+        : <Button appearance="outline" onClick={stopRecording}>■ 停止</Button>}
+      <Button disabled={!!busy} onClick={() => run("recent", async () => { await api.summarizeRecent(id!); await refresh(); })}>
+        直近要約 (mini)
+      </Button>
+      <Button disabled={!!busy} onClick={() => run("long", async () => { await api.summarizeLong(id!); await refresh(); })}>
+        長期要約 (full)
+      </Button>
+      <Button disabled={!!busy} onClick={() => run("topics", async () => { await api.generateTopics(id!); await refresh(); })}>
+        Q&amp;A トピック生成
+      </Button>
+      <Button disabled={!!busy} onClick={() => run("export", async () => { await api.downloadSessionUtterances(id!); })}>
+        発話JSONダウンロード
+      </Button>
+      <Button disabled={!!busy} onClick={() => run("export-md", async () => { await api.downloadSessionItemsMarkdown(id!); })}>
+        全文書MDダウンロード
+      </Button>
+    </>
+  );
+
   return (
     <div className={styles.page}>
+      <section className={styles.mobileTop}>
+        <div className={styles.actions}>{actionButtons}</div>
+        {latestSummary && (
+          <section className={styles.section}>
+            <Subtitle2>最新の要約</Subtitle2>
+            <Card className={styles.summaryCard}>
+              <Text weight="semibold">{latestSummary.kind === "recent" ? "直近" : "長期"} ・ {new Date(latestSummary.createdAt).toLocaleTimeString()}</Text>
+              <pre className={styles.summaryText}>{latestSummary.text}</pre>
+            </Card>
+          </section>
+        )}
+      </section>
+
       <div className={styles.layout}>
         <section className={styles.leftPane}>
           <Subtitle2>発話 / 訳（新しい順）</Subtitle2>
@@ -281,32 +337,15 @@ export function SessionView() {
         </section>
 
         <div className={styles.rightPane}>
-          <div className={styles.actions}>
-            {!recording
-              ? <Button appearance="primary" onClick={startRecording}>● 録音開始</Button>
-              : <Button appearance="outline" onClick={stopRecording}>■ 停止</Button>}
-            <Button disabled={!!busy} onClick={() => run("recent", async () => { await api.summarizeRecent(id!); await refresh(); })}>
-              直近要約 (mini)
-            </Button>
-            <Button disabled={!!busy} onClick={() => run("long", async () => { await api.summarizeLong(id!); await refresh(); })}>
-              長期要約 (full)
-            </Button>
-            <Button disabled={!!busy} onClick={() => run("topics", async () => { await api.generateTopics(id!); await refresh(); })}>
-              Q&amp;A トピック生成
-            </Button>
-            <Button disabled={!!busy} onClick={() => run("export", async () => { await api.downloadSessionUtterances(id!); })}>
-              発話JSONダウンロード
-            </Button>
-            <Button disabled={!!busy} onClick={() => run("export-md", async () => { await api.downloadSessionItemsMarkdown(id!); })}>
-              全文書MDダウンロード
-            </Button>
+          <div className={`${styles.actions} ${styles.desktopOnly}`}>
+            {actionButtons}
           </div>
-          <Divider />
+          <Divider className={styles.desktopOnly} />
 
           <section className={styles.section}>
             <Subtitle2>要約（新しい順）</Subtitle2>
-            {summaries.map(s => (
-              <Card key={s.id} className={styles.summaryCard}>
+            {summaries.map((s, index) => (
+              <Card key={s.id} className={`${styles.summaryCard} ${index === 0 ? styles.hideOnMobile : ""}`}>
                 <Text weight="semibold">{s.kind === "recent" ? "直近" : "長期"} ・ {new Date(s.createdAt).toLocaleTimeString()}</Text>
                 <pre className={styles.summaryText}>{s.text}</pre>
               </Card>
