@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
+  Body1,
+  Button,
+  Card,
+  Caption1,
+  Divider,
+  Subtitle2,
+  Text,
+  makeStyles,
+  tokens,
+} from "@fluentui/react-components";
+import {
   AudioConfig,
   SpeechConfig,
   SpeechRecognizer,
@@ -10,7 +21,116 @@ import { api, type Segment, type Summary, type Topic, type Question } from "../a
 
 interface Item { type: string; [k: string]: any; }
 
+const useStyles = makeStyles({
+  page: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalL,
+  },
+  layout: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalL,
+    "@media screen and (min-width: 1024px)": {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: tokens.spacingHorizontalXL,
+    },
+  },
+  leftPane: {
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalM,
+    "@media screen and (min-width: 1024px)": {
+      flex: "0 0 44%",
+      position: "sticky",
+      top: tokens.spacingVerticalL,
+    },
+  },
+  rightPane: {
+    minWidth: 0,
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalL,
+  },
+  actions: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: tokens.spacingHorizontalS,
+    "@media screen and (max-width: 1023px)": {
+      position: "sticky",
+      top: "62px",
+      zIndex: 10,
+      backgroundColor: tokens.colorNeutralBackground3,
+      paddingTop: tokens.spacingVerticalS,
+      paddingBottom: tokens.spacingVerticalS,
+    },
+  },
+  section: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalM,
+  },
+  list: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalS,
+  },
+  segmentCard: {
+    padding: tokens.spacingHorizontalM,
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalXS,
+  },
+  sourceText: {
+    color: tokens.colorNeutralForeground3,
+  },
+  translatedText: {
+    fontWeight: tokens.fontWeightSemibold,
+  },
+  summaryCard: {
+    padding: tokens.spacingHorizontalM,
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalS,
+  },
+  summaryText: {
+    margin: 0,
+    whiteSpace: "pre-wrap",
+    fontFamily: "inherit",
+  },
+  topicCard: {
+    padding: tokens.spacingHorizontalM,
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalS,
+  },
+  topicHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: tokens.spacingHorizontalM,
+  },
+  topicTitle: {
+    fontWeight: tokens.fontWeightSemibold,
+  },
+  rationale: {
+    color: tokens.colorNeutralForeground3,
+  },
+  questionCard: {
+    backgroundColor: tokens.colorBrandBackground2,
+    border: `1px solid ${tokens.colorBrandStroke1}`,
+    padding: tokens.spacingHorizontalM,
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalXS,
+  },
+});
+
 export function SessionView() {
+  const styles = useStyles();
   const { id } = useParams<{ id: string }>();
   const [items, setItems] = useState<Item[]>([]);
   const [recording, setRecording] = useState(false);
@@ -146,80 +266,81 @@ export function SessionView() {
   }
 
   return (
-    <div className="page session-page">
-      <div className="session-layout">
-        <section className="session-left-pane">
-          <h3>発話 / 訳（新しい順）</h3>
-          <ul className="segments">
+    <div className={styles.page}>
+      <div className={styles.layout}>
+        <section className={styles.leftPane}>
+          <Subtitle2>発話 / 訳（新しい順）</Subtitle2>
+          <div className={styles.list}>
             {segments.map(s => (
-              <li key={s.id}>
-                <div className="src">[{s.seq}] {s.sourceText}</div>
-                <div className="ja">{s.ja}</div>
-              </li>
+              <Card key={s.id} className={styles.segmentCard}>
+                <Caption1 className={styles.sourceText}>[{s.seq}] {s.sourceText}</Caption1>
+                <Body1 className={styles.translatedText}>{s.ja}</Body1>
+              </Card>
             ))}
-          </ul>
+          </div>
         </section>
 
-        <div className="session-right-pane">
-          <div className="row session-actions">
+        <div className={styles.rightPane}>
+          <div className={styles.actions}>
             {!recording
-              ? <button onClick={startRecording}>● 録音開始</button>
-              : <button onClick={stopRecording}>■ 停止</button>}
-            <button disabled={!!busy} onClick={() => run("recent", async () => { await api.summarizeRecent(id!); await refresh(); })}>
+              ? <Button appearance="primary" onClick={startRecording}>● 録音開始</Button>
+              : <Button appearance="outline" onClick={stopRecording}>■ 停止</Button>}
+            <Button disabled={!!busy} onClick={() => run("recent", async () => { await api.summarizeRecent(id!); await refresh(); })}>
               直近要約 (mini)
-            </button>
-            <button disabled={!!busy} onClick={() => run("long", async () => { await api.summarizeLong(id!); await refresh(); })}>
+            </Button>
+            <Button disabled={!!busy} onClick={() => run("long", async () => { await api.summarizeLong(id!); await refresh(); })}>
               長期要約 (full)
-            </button>
-            <button disabled={!!busy} onClick={() => run("topics", async () => { await api.generateTopics(id!); await refresh(); })}>
+            </Button>
+            <Button disabled={!!busy} onClick={() => run("topics", async () => { await api.generateTopics(id!); await refresh(); })}>
               Q&amp;A トピック生成
-            </button>
-            <button disabled={!!busy} onClick={() => run("export", async () => { await api.downloadSessionUtterances(id!); })}>
+            </Button>
+            <Button disabled={!!busy} onClick={() => run("export", async () => { await api.downloadSessionUtterances(id!); })}>
               発話JSONダウンロード
-            </button>
-            <button disabled={!!busy} onClick={() => run("export-md", async () => { await api.downloadSessionItemsMarkdown(id!); })}>
+            </Button>
+            <Button disabled={!!busy} onClick={() => run("export-md", async () => { await api.downloadSessionItemsMarkdown(id!); })}>
               全文書MDダウンロード
-            </button>
+            </Button>
           </div>
+          <Divider />
 
-          <section>
-            <h3>要約（新しい順）</h3>
+          <section className={styles.section}>
+            <Subtitle2>要約（新しい順）</Subtitle2>
             {summaries.map(s => (
-              <article key={s.id} className={`summary ${s.kind}`}>
-                <header>{s.kind === "recent" ? "直近" : "長期"} ・ {new Date(s.createdAt).toLocaleTimeString()}</header>
-                <pre>{s.text}</pre>
-              </article>
+              <Card key={s.id} className={styles.summaryCard}>
+                <Text weight="semibold">{s.kind === "recent" ? "直近" : "長期"} ・ {new Date(s.createdAt).toLocaleTimeString()}</Text>
+                <pre className={styles.summaryText}>{s.text}</pre>
+              </Card>
             ))}
           </section>
 
-          <section>
-            <h3>Q&amp;A 候補</h3>
-            <ul className="topics">
+          <section className={styles.section}>
+            <Subtitle2>Q&amp;A 候補</Subtitle2>
+            <div className={styles.list}>
               {topics.map(t => (
-                <li key={t.id}>
-                  <div className="topic-header">
-                    <div className="title">{t.title}</div>
-                    <button onClick={() => run("q", async () => {
+                <Card key={t.id} className={styles.topicCard}>
+                  <div className={styles.topicHeader}>
+                    <Text className={styles.topicTitle}>{t.title}</Text>
+                    <Button size="small" onClick={() => run("q", async () => {
                       const q = await api.generateQuestion(id!, t.id);
                       setQuestionsByTopicId(prev => ({ ...prev, [t.id]: q }));
-                    })}>Q&amp;A生成</button>
+                    })}>Q&amp;A生成</Button>
                   </div>
-                  <div className="rationale">{t.rationale}</div>
+                  <Text size={200} className={styles.rationale}>{t.rationale}</Text>
                   {questionsByTopicId[t.id] && (
-                    <div className="question">
+                    <Card className={styles.questionCard}>
                       {questionsByTopicId[t.id].en || questionsByTopicId[t.id].ja ? (
                         <>
-                          {questionsByTopicId[t.id].en && <div><strong>EN:</strong> {questionsByTopicId[t.id].en}</div>}
-                          {questionsByTopicId[t.id].ja && <div><strong>JA:</strong> {questionsByTopicId[t.id].ja}</div>}
+                          {questionsByTopicId[t.id].en && <Text><strong>EN:</strong> {questionsByTopicId[t.id].en}</Text>}
+                          {questionsByTopicId[t.id].ja && <Text><strong>JA:</strong> {questionsByTopicId[t.id].ja}</Text>}
                         </>
                       ) : (
-                        <div><strong>質問:</strong> {questionsByTopicId[t.id].text}</div>
+                        <Text><strong>質問:</strong> {questionsByTopicId[t.id].text}</Text>
                       )}
-                    </div>
+                    </Card>
                   )}
-                </li>
+                </Card>
               ))}
-            </ul>
+            </div>
           </section>
         </div>
       </div>

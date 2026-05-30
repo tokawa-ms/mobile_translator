@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { MsalProvider } from "@azure/msal-react";
+import { FluentProvider, webLightTheme } from "@fluentui/react-components";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { msalInstance } from "./auth";
 import App from "./App";
@@ -16,15 +17,17 @@ async function bootstrap() {
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <MsalProvider instance={msalInstance}>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<App />}>
-              <Route index element={<Navigate to="/sessions" replace />} />
-              <Route path="sessions" element={<SessionList />} />
-              <Route path="sessions/:id" element={<SessionView />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
+        <FluentProvider theme={webLightTheme}>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<App />}>
+                <Route index element={<Navigate to="/sessions" replace />} />
+                <Route path="sessions" element={<SessionList />} />
+                <Route path="sessions/:id" element={<SessionView />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </FluentProvider>
       </MsalProvider>
     </React.StrictMode>,
   );
