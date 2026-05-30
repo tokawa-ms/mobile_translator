@@ -33,7 +33,7 @@ flowchart LR
 ## 主な機能
 
 - セッション管理
-  - タイトルと入力言語を選択してセッションを作成
+  - タイトル・入力言語に加えて、任意のスピーカー名とセッション通し番号を指定してセッションを作成
   - セッションごとに発話、要約、トピック、質問を管理
 - 音声入力と翻訳
   - 認識結果をセグメントとして保存
@@ -116,6 +116,7 @@ azd env set API_AUDIENCE api://<api-app-client-id>
 
 補足:
 
+- `azd up` / `azd provision` 時は `azure.yaml` に従って、Windows では `scripts/preprovision.ps1`、POSIX 環境では `scripts/preprovision.sh` が自動実行されます
 - `scripts/preprovision.ps1` も `SPA_CLIENT_ID` と `API_AUDIENCE` の未設定チェックを行います
 - `.env` から一括投入する場合は `scripts/import-env-to-azd.ps1` が使えます
 
@@ -138,15 +139,15 @@ azd up
 - `API_AUDIENCE`
 - `API_SCOPE`（既定: `access_as_user`）
 - `PASSKEY_AUTH_CONTEXT_ID`（任意）
-- `AZURE_OPENAI_DEPLOYMENT_MINI` / `AZURE_OPENAI_DEPLOYMENT_FULL`
-- `AZURE_OPENAI_MODEL_MINI` / `AZURE_OPENAI_MODEL_FULL`
+- `AZURE_OPENAI_DEPLOYMENT_MINI` / `AZURE_OPENAI_DEPLOYMENT_FULL`（実際に Azure OpenAI に作成済みのデプロイ名に合わせる）
+- `AZURE_OPENAI_MODEL_MINI` / `AZURE_OPENAI_MODEL_FULL`（Bicep が Azure OpenAI デプロイを作る際のモデル名。API ランタイムでは未使用）
 
 ### API `.env`（ローカル）
 
 - `TENANT_ID`, `API_AUDIENCE`, `API_SCOPE`
 - `AZURE_OPENAI_ENDPOINT`
-- `SPEECH_REGION`, `SPEECH_ENDPOINT`, `SPEECH_RESOURCE_ID`
-- `TRANSLATOR_ENDPOINT`, `TRANSLATOR_REGION`
+- `SPEECH_REGION`, `SPEECH_ENDPOINT`, `SPEECH_RESOURCE_ID`（Speech SDK 用トークン発行に必須。Azure デプロイ時は自動設定）
+- `TRANSLATOR_ENDPOINT`, `TRANSLATOR_REGION`（Azure デプロイ時の `TRANSLATOR_REGION` は `AZURE_LOCATION` と同じ値が設定される）
 - `COSMOS_ENDPOINT`, `COSMOS_DATABASE`, `COSMOS_CONTAINER`
 - `CORS_ALLOWED_ORIGINS`
 
@@ -173,14 +174,14 @@ azd up
 | POST   | `/api/sessions/{id}/summary/long`              | 長期要約生成                     |
 | POST   | `/api/sessions/{id}/topics`                    | トピック生成                     |
 | POST   | `/api/sessions/{id}/topics/{topicId}/question` | 質問生成                         |
-| GET    | `/api/sessions/{id}/segments/export`           | 発話 JSON エクスポート           |
-| GET    | `/api/sessions/{id}/items/export/markdown`     | 全アイテム Markdown エクスポート |
+| GET    | `/api/sessions/{id}/segments/export`           | セッション情報付き発話 JSON ファイルをダウンロード |
+| GET    | `/api/sessions/{id}/items/export/markdown`     | セッション全文書 Markdown ファイルをダウンロード |
 
 ## データモデル
 
 | type       | 説明                             |
 | ---------- | -------------------------------- |
-| `session`  | タイトル、入力言語、所有ユーザー |
+| `session`  | タイトル、入力言語、任意のスピーカー名・通し番号、所有ユーザー |
 | `segment`  | 発話原文、和訳、連番             |
 | `summary`  | `recent` / `long` 要約           |
 | `topic`    | Q&A 候補トピック                 |

@@ -38,6 +38,8 @@ azd env set SPA_CLIENT_ID <spa-client-id>
 azd env set API_AUDIENCE api://<api-app-client-id>
 ```
 
+`azd up` / `azd provision` 実行時は、`azure.yaml` に従って Windows では `scripts/preprovision.ps1`、POSIX 環境では `scripts/preprovision.sh` が自動実行されます。
+
 必要に応じて以下も設定します。
 
 ```powershell
@@ -52,6 +54,9 @@ azd env set AZURE_OPENAI_MODEL_MINI gpt-4o-mini
 azd env set AZURE_OPENAI_MODEL_FULL gpt-4o
 ```
 
+- `AZURE_OPENAI_DEPLOYMENT_MINI` / `AZURE_OPENAI_DEPLOYMENT_FULL` は、実際に Azure OpenAI リソース上で利用するデプロイ名と一致させてください。
+- `AZURE_OPENAI_MODEL_MINI` / `AZURE_OPENAI_MODEL_FULL` は Bicep が Azure OpenAI デプロイを作成する際のモデル名であり、API コンテナのランタイム環境変数としては使われません。
+
 ## 4. `.env` から一括反映（任意）
 
 ルート `.env.example` を `.env` としてコピーし値を埋めたうえで、次を実行します。
@@ -59,6 +64,8 @@ azd env set AZURE_OPENAI_MODEL_FULL gpt-4o
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\import-env-to-azd.ps1 -EnvFile .env -AzdEnvironment mtrans-dev
 ```
+
+この方法では、`.env` に書いた任意の `AZURE_OPENAI_DEPLOYMENT_*` / `AZURE_OPENAI_MODEL_*` / `PASSKEY_AUTH_CONTEXT_ID` もまとめて `azd env` に取り込めます。
 
 確認のみの場合:
 
@@ -131,6 +138,7 @@ azd env get-values
 - API は内部 Ingress、Web は外部 Ingress
 - Web の `/api/*` は Nginx 経由で API へプロキシ
 - API の Azure 認証は Managed Identity 前提
+- Azure デプロイ時の `SPEECH_RESOURCE_ID` は Container Apps に自動注入される。ローカル API 実行時は `src/api/.env.example` をもとに `.env` へ設定が必要
 - OpenAI / Translator / Cosmos / ACR は Private Endpoint を利用
 - Speech はブラウザ接続のため public network access 有効
 
