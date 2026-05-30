@@ -16,7 +16,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export interface SpeechToken { token: string; region: string; }
-export interface SessionInfo { id: string; title: string; sourceLang: string; createdAt: string; }
+export interface SessionInfo {
+  id: string;
+  title: string;
+  sourceLang: string;
+  speakerName?: string | null;
+  sessionNumber?: number | null;
+  createdAt: string;
+}
 export interface Segment { id: string; seq: number; sourceText: string; ja: string; type: "segment"; }
 export interface Summary {
   id: string;
@@ -40,10 +47,10 @@ export interface Question {
 export const api = {
   speechToken: () => request<SpeechToken>("/api/speech/token", { method: "POST" }),
   listSessions: () => request<SessionInfo[]>("/api/sessions"),
-  createSession: (title: string, sourceLang: string) =>
+  createSession: (title: string, sourceLang: string, speakerName?: string, sessionNumber?: number) =>
     request<SessionInfo>("/api/sessions", {
       method: "POST",
-      body: JSON.stringify({ title, sourceLang }),
+      body: JSON.stringify({ title, sourceLang, speakerName, sessionNumber }),
     }),
   getSession: (id: string) => request<{ items: any[] }>(`/api/sessions/${id}`),
   addSegment: (id: string, sourceText: string, startMs = 0, endMs = 0) =>
