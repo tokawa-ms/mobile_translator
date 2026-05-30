@@ -1,5 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  Button,
+  Card,
+  Dropdown,
+  Field,
+  Input,
+  Option,
+  Subtitle2,
+  Text,
+  makeStyles,
+  tokens,
+} from "@fluentui/react-components";
 import { api, type SessionInfo } from "../api";
 
 const LANGS = [
@@ -13,7 +25,50 @@ const LANGS = [
   { code: "es-ES", label: "スペイン語" },
 ];
 
+const useStyles = makeStyles({
+  page: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalL,
+  },
+  card: {
+    padding: tokens.spacingHorizontalL,
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalM,
+  },
+  row: {
+    display: "grid",
+    gridTemplateColumns: "minmax(180px, 1fr) minmax(180px, 1fr) auto",
+    gap: tokens.spacingHorizontalM,
+    alignItems: "end",
+    "@media screen and (max-width: 720px)": {
+      gridTemplateColumns: "1fr",
+    },
+  },
+  sessions: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalS,
+  },
+  sessionItem: {
+    padding: tokens.spacingHorizontalM,
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalXS,
+  },
+  sessionLink: {
+    textDecorationLine: "none",
+    color: tokens.colorBrandForegroundLink,
+    fontWeight: tokens.fontWeightSemibold,
+  },
+  meta: {
+    color: tokens.colorNeutralForeground3,
+  },
+});
+
 export function SessionList() {
+  const styles = useStyles();
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [title, setTitle] = useState("");
   const [lang, setLang] = useState("en-US");
@@ -35,28 +90,41 @@ export function SessionList() {
   }
 
   return (
-    <div className="page">
-      <h2>新しいセッション</h2>
-      <div className="row">
-        <input placeholder="タイトル" value={title} onChange={e => setTitle(e.target.value)} />
-        <select
-          aria-label="収録言語"
-          value={lang}
-          onChange={e => setLang(e.target.value)}
-        >
-          {LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
-        </select>
-        <button onClick={create} disabled={loading}>作成</button>
-      </div>
-      <h2>セッション一覧</h2>
-      <ul className="sessions">
-        {sessions.map(s => (
-          <li key={s.id}>
-            <Link to={`/sessions/${s.id}`}>{s.title}</Link>
-            <small>{s.sourceLang} ・ {new Date(s.createdAt).toLocaleString()}</small>
-          </li>
-        ))}
-      </ul>
+    <div className={styles.page}>
+      <Card className={styles.card}>
+        <Subtitle2>新しいセッション</Subtitle2>
+        <div className={styles.row}>
+          <Field label="タイトル">
+            <Input placeholder="タイトル" value={title} onChange={e => setTitle(e.target.value)} />
+          </Field>
+          <Field label="収録言語">
+            <Dropdown
+              selectedOptions={[lang]}
+              value={LANGS.find(l => l.code === lang)?.label ?? ""}
+              onOptionSelect={(_e, data) => {
+                if (data.optionValue) {
+                  setLang(data.optionValue);
+                }
+              }}
+            >
+              {LANGS.map(l => <Option key={l.code} value={l.code}>{l.label}</Option>)}
+            </Dropdown>
+          </Field>
+          <Button appearance="primary" onClick={create} disabled={loading}>作成</Button>
+        </div>
+      </Card>
+
+      <Card className={styles.card}>
+        <Subtitle2>セッション一覧</Subtitle2>
+        <div className={styles.sessions}>
+          {sessions.map(s => (
+            <Card key={s.id} className={styles.sessionItem}>
+              <Link className={styles.sessionLink} to={`/sessions/${s.id}`}>{s.title}</Link>
+              <Text size={200} className={styles.meta}>{s.sourceLang} ・ {new Date(s.createdAt).toLocaleString()}</Text>
+            </Card>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }
