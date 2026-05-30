@@ -6,6 +6,7 @@ from collections import defaultdict
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
+from typing import Optional
 
 from ..auth import CurrentUser, get_current_user
 from ..config import Settings, get_settings
@@ -33,6 +34,10 @@ def _format_markdown_export(session: dict, items: list[dict]) -> str:
     lines.append(f"- Session ID: {_md_escape(session.get('id'))}")
     lines.append(f"- Title: {_md_escape(session.get('title'))}")
     lines.append(f"- Source Language: {_md_escape(session.get('sourceLang'))}")
+    if session.get("speakerName"):
+        lines.append(f"- Speaker Name: {_md_escape(session.get('speakerName'))}")
+    if session.get("sessionNumber") is not None:
+        lines.append(f"- Session Number: {_md_escape(session.get('sessionNumber'))}")
     lines.append(f"- Created At: {_md_escape(session.get('createdAt'))}")
     lines.append(f"- Exported Items: {len(items)}")
 
@@ -127,12 +132,16 @@ def _format_markdown_export(session: dict, items: list[dict]) -> str:
 class SessionCreate(BaseModel):
     title: str = Field(default="Untitled")
     sourceLang: str = Field(default="en-US")
+    speakerName: Optional[str] = Field(default=None)
+    sessionNumber: Optional[int] = Field(default=None)
 
 
 class SessionOut(BaseModel):
     id: str
     title: str
     sourceLang: str
+    speakerName: Optional[str] = None
+    sessionNumber: Optional[int] = None
     createdAt: str
 
 
@@ -153,12 +162,16 @@ async def create_session(
         "userOid": user.oid,
         "title": body.title,
         "sourceLang": body.sourceLang,
+        "speakerName": (body.speakerName.strip() if body.speakerName and body.speakerName.strip() else None),
+        "sessionNumber": body.sessionNumber,
     }
     created = await create_doc(container, doc)
     return SessionOut(
         id=created["id"],
         title=created["title"],
         sourceLang=created["sourceLang"],
+        speakerName=created.get("speakerName"),
+        sessionNumber=created.get("sessionNumber"),
         createdAt=created["createdAt"],
     )
 
@@ -171,7 +184,7 @@ async def list_sessions(
     container = await get_container(settings)
     items = await query(
         container,
-        "SELECT c.id, c.title, c.sourceLang, c.createdAt FROM c "
+        "SELECT c.id, c.title, c.sourceLang, c.speakerName, c.sessionNumber, c.createdAt FROM c "
         "WHERE c.type='session' AND c.userOid=@oid ORDER BY c.createdAt DESC",
         [{"name": "@oid", "value": user.oid}],
     )
@@ -229,6 +242,8 @@ async def export_session_segments(
             "id": session.get("id"),
             "title": session.get("title"),
             "sourceLang": session.get("sourceLang"),
+            "speakerName": session.get("speakerName"),
+            "sessionNumber": session.get("sessionNumber"),
             "createdAt": session.get("createdAt"),
         },
         "utterances": segments,

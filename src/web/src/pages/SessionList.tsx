@@ -37,14 +37,18 @@ const useStyles = makeStyles({
     flexDirection: "column",
     gap: tokens.spacingVerticalM,
   },
-  row: {
+  formGrid: {
     display: "grid",
-    gridTemplateColumns: "minmax(180px, 1fr) minmax(180px, 1fr) auto",
+    gridTemplateColumns: "repeat(2, minmax(240px, 1fr))",
     gap: tokens.spacingHorizontalM,
-    alignItems: "end",
+    rowGap: tokens.spacingVerticalM,
     "@media screen and (max-width: 720px)": {
       gridTemplateColumns: "1fr",
     },
+  },
+  actions: {
+    display: "flex",
+    justifyContent: "flex-end",
   },
   sessions: {
     display: "flex",
@@ -72,6 +76,8 @@ export function SessionList() {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [title, setTitle] = useState("");
   const [lang, setLang] = useState("en-US");
+  const [speakerName, setSpeakerName] = useState("");
+  const [sessionNumber, setSessionNumber] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function refresh() {
@@ -83,8 +89,17 @@ export function SessionList() {
   async function create() {
     setLoading(true);
     try {
-      await api.createSession(title || "Untitled", lang);
+      const trimmedSpeakerName = speakerName.trim();
+      const parsedSessionNumber = Number.parseInt(sessionNumber, 10);
+      await api.createSession(
+        title || "Untitled",
+        lang,
+        trimmedSpeakerName || undefined,
+        Number.isNaN(parsedSessionNumber) ? undefined : parsedSessionNumber,
+      );
       setTitle("");
+      setSpeakerName("");
+      setSessionNumber("");
       await refresh();
     } finally { setLoading(false); }
   }
@@ -93,7 +108,7 @@ export function SessionList() {
     <div className={styles.page}>
       <Card className={styles.card}>
         <Subtitle2>新しいセッション</Subtitle2>
-        <div className={styles.row}>
+        <div className={styles.formGrid}>
           <Field label="タイトル">
             <Input placeholder="タイトル" value={title} onChange={e => setTitle(e.target.value)} />
           </Field>
@@ -110,6 +125,21 @@ export function SessionList() {
               {LANGS.map(l => <Option key={l.code} value={l.code}>{l.label}</Option>)}
             </Dropdown>
           </Field>
+          <Field label="スピーカー名 (任意)">
+            <Input placeholder="例: 山田 太郎" value={speakerName} onChange={e => setSpeakerName(e.target.value)} />
+          </Field>
+          <Field label="セッション通し番号 (任意)">
+            <Input
+              type="number"
+              min={1}
+              step={1}
+              placeholder="例: 12"
+              value={sessionNumber}
+              onChange={e => setSessionNumber(e.target.value)}
+            />
+          </Field>
+        </div>
+        <div className={styles.actions}>
           <Button appearance="primary" onClick={create} disabled={loading}>作成</Button>
         </div>
       </Card>
@@ -120,7 +150,12 @@ export function SessionList() {
           {sessions.map(s => (
             <Card key={s.id} className={styles.sessionItem}>
               <Link className={styles.sessionLink} to={`/sessions/${s.id}`}>{s.title}</Link>
-              <Text size={200} className={styles.meta}>{s.sourceLang} ・ {new Date(s.createdAt).toLocaleString()}</Text>
+              <Text size={200} className={styles.meta}>
+                {s.sourceLang}
+                {s.speakerName ? ` ・ ${s.speakerName}` : ""}
+                {s.sessionNumber != null ? ` ・ #${s.sessionNumber}` : ""}
+                {` ・ ${new Date(s.createdAt).toLocaleString()}`}
+              </Text>
             </Card>
           ))}
         </div>
